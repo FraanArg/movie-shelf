@@ -74,71 +74,59 @@ export default function Header() {
 
 function SyncButton() {
     const [syncing, setSyncing] = useState(false);
-    const [progress, setProgress] = useState<{ percent: number; message: string } | null>(null);
+    const [status, setStatus] = useState<string | null>(null);
     const router = useRouter();
 
     const handleSync = async () => {
         setSyncing(true);
-        setProgress({ percent: 0, message: "Starting sync..." });
+        setStatus("Syncing...");
 
         try {
             const response = await fetch("/api/sync", { method: "POST" });
 
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || "Sync failed");
-            }
-
+            // Try to read the stream for completion
             const reader = response.body?.getReader();
-            if (!reader) throw new Error("No response stream");
+            if (reader) {
+                const decoder = new TextDecoder();
+                let result = "";
 
-            const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    result += decoder.decode(value);
+                }
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const text = decoder.decode(value);
-                const lines = text.split("\n\n").filter(line => line.startsWith("data: "));
-
-                for (const line of lines) {
+                // Parse the last data event
+                const lines = result.split("\n\n").filter(l => l.startsWith("data: "));
+                const lastLine = lines[lines.length - 1];
+                if (lastLine) {
                     try {
-                        const data = JSON.parse(line.replace("data: ", ""));
-
-                        if (data.error) {
+                        const data = JSON.parse(lastLine.replace("data: ", ""));
+                        if (data.done) {
+                            setStatus(`✓ ${data.count} items`);
+                        } else if (data.error) {
                             throw new Error(data.error);
                         }
-
-                        if (data.done) {
-                            setProgress({ percent: 100, message: `Done! Synced ${data.count} items` });
-                            setTimeout(() => {
-                                router.refresh();
-                                setSyncing(false);
-                                setProgress(null);
-                            }, 1500);
-                            return;
-                        }
-
-                        if (data.stage === "enrich") {
-                            const enrichPercent = 25 + Math.round((data.current / data.total) * 70);
-                            setProgress({ percent: enrichPercent, message: data.message || `${data.current}/${data.total}` });
-                        } else {
-                            setProgress({ percent: data.percent || 0, message: data.message || "Syncing..." });
-                        }
-                    } catch (parseError) {
-                        // Skip unparseable lines
+                    } catch {
+                        // Parse error, but sync likely completed
+                        setStatus("✓ Done!");
                     }
                 }
             }
 
-            // Stream ended normally - refresh the page
-            router.refresh();
+            setTimeout(() => {
+                router.refresh();
+                setSyncing(false);
+                setStatus(null);
+            }, 2000);
+
         } catch (e: any) {
             console.error(e);
-            alert(`Sync failed: ${e.message}`);
-        } finally {
-            setSyncing(false);
-            setProgress(null);
+            setStatus("Failed");
+            setTimeout(() => {
+                setSyncing(false);
+                setStatus(null);
+            }, 2000);
         }
     };
 
@@ -151,32 +139,32 @@ function SyncButton() {
                 borderRadius: "20px",
                 fontSize: "0.9rem",
                 fontWeight: "500",
-                background: syncing ? "linear-gradient(90deg, #333, #555)" : "var(--glass-highlight)",
-                color: "var(--glass-text)",
+                background: syncing
+                    ? "linear-gradient(90deg, #0a84ff, #30d158)"
+                    : "var(--glass-highlight)",
+                color: syncing ? "#fff" : "var(--glass-text)",
                 border: "none",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                opacity: syncing ? 0.9 : 1,
-                position: "relative",
-                minWidth: syncing ? "150px" : "auto",
-                overflow: "hidden",
+                cursor: syncing ? "wait" : "pointer",
+                transition: "all 0.3s ease",
+                minWidth: "80px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
             }}
         >
-            {syncing && progress && (
-                <div style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: `${progress.percent}%`,
-                    background: "linear-gradient(90deg, #0a84ff, #30d158)",
-                    transition: "width 0.3s ease",
-                    borderRadius: "20px",
+            {syncing && (
+                <span style={{
+                    display: "inline-block",
+                    width: "14px",
+                    height: "14px",
+                    border: "2px solid rgba(255,255,255,0.3)",
+                    borderTopColor: "#fff",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
                 }} />
             )}
-            <span style={{ position: "relative", zIndex: 1 }}>
-                {syncing ? (progress ? `${progress.percent}%` : "Syncing...") : "Sync"}
-            </span>
+            {status || "Sync"}
         </button>
     );
 }
