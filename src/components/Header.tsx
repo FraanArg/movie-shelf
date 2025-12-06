@@ -74,24 +74,68 @@ export default function Header() {
 
 function SyncButton() {
     const [syncing, setSyncing] = useState(false);
+    const [progress, setProgress] = useState<{ percent: number; message: string } | null>(null);
     const router = useRouter();
 
     const handleSync = async () => {
         setSyncing(true);
+        setProgress({ percent: 0, message: "Starting sync..." });
+
         try {
-            const res = await fetch("/api/sync", { method: "POST" });
-            if (!res.ok) {
-                const errData = await res.json();
+            const response = await fetch("/api/sync", { method: "POST" });
+
+            if (!response.ok) {
+                const errData = await response.json();
                 throw new Error(errData.error || "Sync failed");
             }
-            const data = await res.json();
-            console.log("Synced items:", data.count);
-            router.refresh(); // Refresh to show new data from local DB
+
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error("No response stream");
+
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const text = decoder.decode(value);
+                const lines = text.split("\n\n").filter(line => line.startsWith("data: "));
+
+                for (const line of lines) {
+                    try {
+                        const data = JSON.parse(line.replace("data: ", ""));
+
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+
+                        if (data.done) {
+                            setProgress({ percent: 100, message: `Done! Synced ${data.count} items` });
+                            setTimeout(() => {
+                                router.refresh();
+                                setSyncing(false);
+                                setProgress(null);
+                            }, 1500);
+                            return;
+                        }
+
+                        if (data.stage === "enrich") {
+                            // Show item count progress for enrichment stage
+                            const enrichPercent = 25 + Math.round((data.current / data.total) * 70);
+                            setProgress({ percent: enrichPercent, message: data.message || `${data.current}/${data.total}` });
+                        } else {
+                            setProgress({ percent: data.percent || 0, message: data.message || "Syncing..." });
+                        }
+                    } catch (e) {
+                        // Skip unparseable lines
+                    }
+                }
+            }
         } catch (e: any) {
             console.error(e);
             alert(`Sync failed: ${e.message}`);
-        } finally {
             setSyncing(false);
+            setProgress(null);
         }
     };
 
@@ -104,15 +148,32 @@ function SyncButton() {
                 borderRadius: "20px",
                 fontSize: "0.9rem",
                 fontWeight: "500",
-                background: "var(--glass-highlight)",
+                background: syncing ? "linear-gradient(90deg, #333, #555)" : "var(--glass-highlight)",
                 color: "var(--glass-text)",
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
-                opacity: syncing ? 0.7 : 1,
+                opacity: syncing ? 0.9 : 1,
+                position: "relative",
+                minWidth: syncing ? "150px" : "auto",
+                overflow: "hidden",
             }}
         >
-            {syncing ? "Syncing..." : "Sync"}
+            {syncing && progress && (
+                <div style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: `${progress.percent}%`,
+                    background: "linear-gradient(90deg, #0a84ff, #30d158)",
+                    transition: "width 0.3s ease",
+                    borderRadius: "20px",
+                }} />
+            )}
+            <span style={{ position: "relative", zIndex: 1 }}>
+                {syncing && progress ? `${progress.percent}%` : "Sync"}
+            </span>
         </button>
     );
 }
