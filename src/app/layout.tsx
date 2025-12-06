@@ -8,6 +8,7 @@ import XRayProvider from "@/components/XRayProvider";
 import SearchOverlay from "@/components/SearchOverlay";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import KeyboardShortcuts from "@/components/KeyboardShortcuts";
+import OfflineIndicator from "@/components/OfflineIndicator";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const oswald = Oswald({ subsets: ["latin"], variable: "--font-oswald" });
@@ -42,9 +43,12 @@ export default function RootLayout({
         {/* Preconnect to external APIs for faster loads */}
         <link rel="preconnect" href="https://api.trakt.tv" />
         <link rel="preconnect" href="https://www.omdbapi.com" />
+        <link rel="preconnect" href="https://api.themoviedb.org" />
+        <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://m.media-amazon.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://api.trakt.tv" />
         <link rel="dns-prefetch" href="https://www.omdbapi.com" />
+        <link rel="dns-prefetch" href="https://api.themoviedb.org" />
       </head>
       <body className={`${inter.variable} ${oswald.variable} ${inter.className}`}>
         <ThemeProvider
@@ -59,6 +63,7 @@ export default function RootLayout({
               <SearchOverlay />
               <FloatingActionButton />
               <KeyboardShortcuts />
+              <OfflineIndicator />
               {children}
             </XRayProvider>
           </BackdropProvider>

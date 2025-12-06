@@ -3,6 +3,10 @@ import Link from "next/link";
 import { getUserStats, getTraktUser } from "@/lib/trakt";
 import { getDB } from "@/lib/db";
 import ThemeToggle from "@/components/ThemeToggle";
+import GenreRadarChart from "@/components/GenreRadarChart";
+import AffinityStats from "@/components/AffinityStats";
+import BadgeGrid from "@/components/BadgeGrid";
+import { getEarnedBadges, getAllBadges } from "@/lib/badges";
 
 export default async function ProfilePage() {
     const cookieStore = await cookies();
@@ -28,8 +32,7 @@ export default async function ProfilePage() {
     const totalMovies = uniqueItems.filter(i => i.type === "movie").length;
     const totalShows = uniqueItems.filter(i => i.type === "series").length;
 
-    // Genres (Mock logic since we don't have genres in DB yet, but we can infer or fetch)
-    // For now, let's use the year as a proxy for "Era" distribution which we DO have.
+    // Decades distribution
     const decades: Record<string, number> = {};
     uniqueItems.forEach(item => {
         if (item.year) {
@@ -41,6 +44,71 @@ export default async function ProfilePage() {
 
     const sortedDecades = Object.entries(decades).sort((a, b) => parseInt(b[0]) - parseInt(a[0]));
     const maxCount = Math.max(...Object.values(decades), 1);
+
+    // Genre aggregation for radar chart
+    const genreCounts: Record<string, number> = {};
+    uniqueItems.forEach(item => {
+        if (item.Genre && item.Genre !== "N/A") {
+            const genres = item.Genre.split(", ");
+            genres.forEach((genre: string) => {
+                const trimmed = genre.trim();
+                if (trimmed) {
+                    genreCounts[trimmed] = (genreCounts[trimmed] || 0) + 1;
+                }
+            });
+        }
+    });
+
+    const genreData = Object.entries(genreCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8);
+
+    // Director aggregation
+    const directorMap: Record<string, { count: number; movies: string[] }> = {};
+    uniqueItems.forEach(item => {
+        if (item.Director && item.Director !== "N/A") {
+            const directors = item.Director.split(", ");
+            directors.forEach((director: string) => {
+                const trimmed = director.trim();
+                if (trimmed) {
+                    if (!directorMap[trimmed]) {
+                        directorMap[trimmed] = { count: 0, movies: [] };
+                    }
+                    directorMap[trimmed].count++;
+                    directorMap[trimmed].movies.push(item.title);
+                }
+            });
+        }
+    });
+
+    const topDirectors = Object.entries(directorMap)
+        .map(([name, data]) => ({ name, count: data.count, movies: data.movies }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+    // Actor aggregation
+    const actorMap: Record<string, { count: number; movies: string[] }> = {};
+    uniqueItems.forEach(item => {
+        if (item.Actors && item.Actors !== "N/A") {
+            const actors = item.Actors.split(", ");
+            actors.forEach((actor: string) => {
+                const trimmed = actor.trim();
+                if (trimmed) {
+                    if (!actorMap[trimmed]) {
+                        actorMap[trimmed] = { count: 0, movies: [] };
+                    }
+                    actorMap[trimmed].count++;
+                    actorMap[trimmed].movies.push(item.title);
+                }
+            });
+        }
+    });
+
+    const topActors = Object.entries(actorMap)
+        .map(([name, data]) => ({ name, count: data.count, movies: data.movies }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
 
     return (
         <main style={{ padding: "40px 20px", minHeight: "100vh", maxWidth: "800px", margin: "0 auto" }}>
@@ -77,6 +145,35 @@ export default async function ProfilePage() {
                         </div>
                     ))}
                 </div>
+            </div>
+
+            {/* Genre Radar Chart */}
+            {genreData.length >= 3 && (
+                <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
+                    <h2 style={{ fontSize: "1.5rem", marginBottom: "10px" }}>Genre Distribution</h2>
+                    <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>Your top genres based on your collection</p>
+                    <GenreRadarChart genres={genreData} size={320} />
+                </div>
+            )}
+
+            {/* Affinities */}
+            {(topDirectors.length > 0 || topActors.length > 0) && (
+                <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
+                    <h2 style={{ fontSize: "1.5rem", marginBottom: "20px" }}>Your Affinities</h2>
+                    <AffinityStats directors={topDirectors} actors={topActors} />
+                </div>
+            )}
+
+            {/* Collection Badges */}
+            <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
+                <h2 style={{ fontSize: "1.5rem", marginBottom: "10px" }}>Collection Badges</h2>
+                <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>
+                    {getEarnedBadges(uniqueItems, genreCounts).length} of {getAllBadges().length} earned
+                </p>
+                <BadgeGrid
+                    earnedBadges={getEarnedBadges(uniqueItems, genreCounts)}
+                    allBadges={getAllBadges()}
+                />
             </div>
         </main>
     );

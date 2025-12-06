@@ -14,6 +14,8 @@ import SpineGrid from "@/components/SpineGrid";
 import HeroSpotlight from "@/components/HeroSpotlight";
 import TimeTravelTimeline from "@/components/TimeTravelTimeline";
 import QuickFilters from "@/components/QuickFilters";
+import MoodFilter from "@/components/MoodFilter";
+import { MOODS } from "@/components/MoodFilter";
 import { fetchMoviesAction } from "@/app/actions";
 import { getDB } from "@/lib/db";
 
@@ -28,8 +30,8 @@ const genreKeywords: Record<string, string[]> = {
   thriller: ["thriller", "suspense", "mystery", "crime", "detective"],
 };
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ sort?: string, decade?: string, view?: string, genre?: string }> }) {
-  const { sort, decade, view, genre } = await searchParams;
+export default async function Home({ searchParams }: { searchParams: Promise<{ sort?: string, decade?: string, view?: string, genre?: string, mood?: string }> }) {
+  const { sort, decade, view, genre, mood } = await searchParams;
   const cookieStore = await cookies();
   const token = cookieStore.get("trakt_access_token")?.value;
   const clientId = process.env.NEXT_PUBLIC_TRAKT_CLIENT_ID;
@@ -106,6 +108,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
     pageTitle = genre.charAt(0).toUpperCase() + genre.slice(1);
   }
 
+  // Mood-based filtering
+  if (mood) {
+    const selectedMood = MOODS.find(m => m.id === mood);
+    if (selectedMood) {
+      displayedMovies = displayedMovies.filter(m => {
+        const movieGenres = (m.Genre || "").split(", ").map(g => g.trim());
+        return selectedMood.genres.some(g => movieGenres.includes(g));
+      });
+      pageTitle = `${selectedMood.emoji} ${selectedMood.label}`;
+    }
+  }
+
   // Director Spotlights Logic
   const directors: Record<string, any[]> = {};
   libraryMovies.forEach(m => {
@@ -179,6 +193,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         </Suspense>
       </div>
 
+      {/* Mood-based filters */}
+      <div style={{ padding: "0 40px", marginTop: "10px" }}>
+        <Suspense fallback={null}>
+          <MoodFilter />
+        </Suspense>
+      </div>
+
       {!isAuthenticated && clientId && (
         <div style={{ padding: "0 40px 20px 40px" }}>
           <Link
@@ -242,6 +263,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
               <BrowseCard label="90s Classics" icon="📼" href="/?sort=90s" color="#8E54E9" />
               <BrowseCard label="Connections" icon="🕸️" href="/connections" color="#11998e" />
               <BrowseCard label="Recently Added" icon="✨" href="/?sort=recent" color="#1FA2FF" />
+              <BrowseCard label="Poster Wall" icon="🖼️" href="/wall" color="#f59e0b" />
+              <BrowseCard label="Blind Spots" icon="🔍" href="/blindspots" color="#ef4444" />
             </div>
           </div>
         </>

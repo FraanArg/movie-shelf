@@ -1,9 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
 import { getMovieMetadata } from "@/lib/omdb";
 import { getMovieTrailer } from "@/lib/trakt";
 import TheatricalToggle from "@/components/TheatricalToggle";
 import ColorExtractor from "@/components/ColorExtractor";
+import SimilarMovies from "@/components/SimilarMovies";
 
 // Mock function to get Trakt ID details if needed, 
 // but for now we might just pass the OMDB ID or use the Trakt ID to lookup.
@@ -136,6 +138,15 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
                             loading="lazy"
                         ></iframe>
                     </div>
+
+                    {/* Similar Movies */}
+                    <Suspense fallback={
+                        <div style={{ marginTop: "40px" }}>
+                            <h3 style={{ color: "#888", marginBottom: "15px" }}>Loading recommendations...</h3>
+                        </div>
+                    }>
+                        <SimilarMovies imdbId={id} />
+                    </Suspense>
                 </div>
             </div>
         </main>

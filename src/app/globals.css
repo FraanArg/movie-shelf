@@ -449,3 +449,13 @@ h3:hover {
   color: #fff;
   border-color: var(--accent);
 }
+
+/* ====== POSTER WALL HOVER EFFECTS ====== */
+.poster-wall-item:hover img {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.poster-wall-item:hover .poster-overlay {
+  opacity: 1 !important;
+}
