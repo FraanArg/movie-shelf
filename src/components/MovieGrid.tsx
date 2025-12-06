@@ -1,52 +1,38 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import MovieCard from "./MovieCard";
 import SkeletonCard from "./SkeletonCard";
 import Bookshelf from "./Bookshelf";
-import { fetchMoviesAction } from "@/app/actions";
 import { useBackdrop } from "./BackdropProvider";
 
 interface MovieGridProps {
-    initialMovies: any[];
+    initialMovies: any[];  // First page of movies to display immediately
+    allMovies: any[];      // Full sorted list for pagination
     sort: string;
 }
 
-export default function MovieGrid({ initialMovies, sort }: MovieGridProps) {
-    const [movies, setMovies] = useState(initialMovies);
-    const [page, setPage] = useState(1);
+const PAGE_SIZE = 50;
+
+export default function MovieGrid({ initialMovies, allMovies, sort }: MovieGridProps) {
+    const [displayCount, setDisplayCount] = useState(initialMovies.length);
     const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
     const observerTarget = useRef(null);
     const { setBackdrop } = useBackdrop();
 
-    // Memoize loadMore to prevent unnecessary re-renders
-    const loadMore = useCallback(async () => {
+    const hasMore = displayCount < allMovies.length;
+
+    // Load more movies from the pre-sorted full list
+    const loadMore = useCallback(() => {
         if (loading || !hasMore) return;
 
         setLoading(true);
-        const nextPage = page + 1;
-        try {
-            const newMovies = await fetchMoviesAction(nextPage, sort);
-            if (newMovies.length === 0) {
-                setHasMore(false);
-            } else {
-                const existingIds = new Set(movies.map((m: any) => m.imdbId || m.id));
-                const uniqueNewMovies = newMovies.filter((m: any) => !existingIds.has(m.imdbId || m.id));
-
-                if (uniqueNewMovies.length === 0) {
-                    setHasMore(false);
-                } else {
-                    setMovies(prev => [...prev, ...uniqueNewMovies]);
-                    setPage(nextPage);
-                }
-            }
-        } catch (e) {
-            console.error("Failed to load more movies", e);
-        } finally {
+        // Small delay for visual feedback
+        setTimeout(() => {
+            setDisplayCount(prev => Math.min(prev + PAGE_SIZE, allMovies.length));
             setLoading(false);
-        }
-    }, [loading, hasMore, page, sort, movies]);
+        }, 100);
+    }, [loading, hasMore, allMovies.length]);
 
     // Intersection Observer with rootMargin for preloading
     useEffect(() => {
@@ -73,6 +59,9 @@ export default function MovieGrid({ initialMovies, sort }: MovieGridProps) {
         };
     }, [loadMore]);
 
+    // Get displayed movies from the sorted list
+    const displayedMovies = allMovies.slice(0, displayCount);
+
     // Calculate stagger delay for each item (capped for performance)
     const getStaggerDelay = (index: number) => {
         const cappedIndex = Math.min(index, 12);
@@ -83,7 +72,7 @@ export default function MovieGrid({ initialMovies, sort }: MovieGridProps) {
         <>
             <div className="contain-layout">
                 <Bookshelf label="My Collection">
-                    {movies.map((movie: any, index: number) => (
+                    {displayedMovies.map((movie: any, index: number) => (
                         <div
                             key={`${movie.id}-${movie.imdbId || 'no-imdb'}`}
                             className="stagger-item"
@@ -118,4 +107,5 @@ export default function MovieGrid({ initialMovies, sort }: MovieGridProps) {
         </>
     );
 }
+
 

@@ -273,7 +273,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           {view === "spine" ? (
             <SpineGrid initialMovies={displayedMovies} sort={sort || "title"} />
           ) : (
-            <MovieGrid initialMovies={displayedMovies} sort={sort || "title"} />
+            <MovieGrid initialMovies={displayedMovies.slice(0, 50)} allMovies={displayedMovies} sort={sort || "title"} />
           )}
         </div>
       )}
