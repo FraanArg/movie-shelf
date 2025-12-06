@@ -10,11 +10,14 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+        console.log("OAuth callback: exchanging code for token...");
         const tokenData = await exchangeCodeForToken(
             code,
             process.env.NEXT_PUBLIC_TRAKT_CLIENT_ID!,
             process.env.TRAKT_CLIENT_SECRET!
         );
+
+        console.log("OAuth callback: token received, setting cookie...");
 
         // Set the token in a cookie
         const response = NextResponse.redirect(new URL("/", request.url));
@@ -23,11 +26,14 @@ export async function GET(request: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             maxAge: tokenData.expires_in,
             path: "/",
+            sameSite: "lax", // Important for OAuth redirects
         });
 
+        console.log("OAuth callback: success, redirecting to home");
         return response;
     } catch (error) {
         console.error("Auth error:", error);
-        return NextResponse.redirect(new URL("/?error=auth_failed", request.url));
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        return NextResponse.redirect(new URL(`/?error=auth_failed&message=${encodeURIComponent(errorMessage)}`, request.url));
     }
 }
