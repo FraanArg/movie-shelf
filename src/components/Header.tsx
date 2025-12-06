@@ -89,12 +89,24 @@ function SyncButton() {
                 throw new Error(data.error || "Sync failed");
             }
 
-            setStatus(`✓ ${data.count} items`);
+            // Show result with remaining count
+            if (data.remaining > 0) {
+                setStatus(`+${data.synced} (${data.remaining} left)`);
+            } else {
+                setStatus(`✓ ${data.total} items`);
+            }
+
+            router.refresh();
+
             setTimeout(() => {
-                router.refresh();
                 setSyncing(false);
-                setStatus(null);
-            }, 2000);
+                // Keep showing remaining count if there are more
+                if (data.remaining > 0) {
+                    setStatus(`${data.remaining} more`);
+                } else {
+                    setStatus(null);
+                }
+            }, 1500);
 
         } catch (e: any) {
             console.error(e);
