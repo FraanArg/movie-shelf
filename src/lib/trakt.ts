@@ -1,5 +1,10 @@
 const TRAKT_API_URL = "https://api.trakt.tv";
-const REDIRECT_URI = typeof window !== "undefined" ? `${window.location.origin}/api/auth/callback` : "http://localhost:3000/api/auth/callback";
+
+// Use environment variable for the redirect URI, fallback to localhost for development
+const getRedirectUri = () => {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    return `${baseUrl}/api/auth/callback`;
+};
 
 export interface TraktMovie {
     title: string;
@@ -24,7 +29,8 @@ export interface TraktShow {
 }
 
 export const getTraktAuthUrl = (clientId: string) => {
-    return `${TRAKT_API_URL}/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${REDIRECT_URI}`;
+    const redirectUri = getRedirectUri();
+    return `${TRAKT_API_URL}/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
 };
 
 export const exchangeCodeForToken = async (code: string, clientId: string, clientSecret: string) => {
@@ -37,7 +43,7 @@ export const exchangeCodeForToken = async (code: string, clientId: string, clien
             code,
             client_id: clientId,
             client_secret: clientSecret,
-            redirect_uri: REDIRECT_URI,
+            redirect_uri: getRedirectUri(),
             grant_type: "authorization_code",
         }),
     });
