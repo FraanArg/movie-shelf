@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getWatchedHistory, getWatchlist } from "@/lib/trakt";
+import { getMovieInfoForSync } from "@/lib/tmdb";
 import { getMovieMetadata } from "@/lib/omdb";
 import { getLocalMovies } from "@/lib/local-library";
 import { saveDB, MovieItem } from "@/lib/db";
@@ -9,13 +10,14 @@ export async function POST() {
     const cookieStore = await cookies();
     const token = cookieStore.get("trakt_access_token")?.value;
     const clientId = process.env.NEXT_PUBLIC_TRAKT_CLIENT_ID;
-    const omdbKey = process.env.OMDB_API_KEY;
+    const tmdbKey = process.env.TMDB_API_KEY;
+    const omdbKey = process.env.OMDB_API_KEY; // Optional, for IMDb/RT ratings
 
-    console.log("Sync started:", { hasToken: !!token, hasClientId: !!clientId, hasOmdbKey: !!omdbKey });
+    console.log("Sync started:", { hasToken: !!token, hasClientId: !!clientId, hasTmdbKey: !!tmdbKey, hasOmdbKey: !!omdbKey });
 
-    if (!token || !clientId || !omdbKey) {
-        console.log("Missing credentials:", { token: !!token, clientId: !!clientId, omdbKey: !!omdbKey });
-        return NextResponse.json({ error: "Missing credentials" }, { status: 401 });
+    if (!token || !clientId || !tmdbKey) {
+        console.log("Missing credentials:", { token: !!token, clientId: !!clientId, tmdbKey: !!tmdbKey });
+        return NextResponse.json({ error: "Missing credentials (need Trakt token and TMDb key)" }, { status: 401 });
     }
 
     try {
@@ -83,24 +85,20 @@ export async function POST() {
             }
         }
 
-
-
         // 3.5 Fetch Watchlist
         const watchlist = await getWatchlist(token, clientId);
         for (const item of watchlist) {
             if (item.type === "movie") {
-                if (processedIds.has(item.movie.ids.trakt)) continue; // Already in history? Skip (Watched > Watchlist)
+                if (processedIds.has(item.movie.ids.trakt)) continue;
                 processedIds.add(item.movie.ids.trakt);
 
                 traktItems.push({
                     type: "movie",
                     data: item.movie,
-                    date: item.listed_at, // Use listed_at for watchlist
+                    date: item.listed_at,
                     list: "watchlist"
                 });
-            } else if (item.type === "show") { // Trakt uses 'show' in watchlist response sometimes? or 'type' field
-                // Actually watchlist endpoint returns type: 'movie' | 'show' | 'season' | 'episode'
-                // But let's handle 'show'
+            } else if (item.type === "show") {
                 const showId = item.show.ids.trakt;
                 if (processedIds.has(showId)) continue;
                 processedIds.add(showId);
@@ -114,38 +112,65 @@ export async function POST() {
             }
         }
 
-        // 4. Enrich with OMDB (Batching to avoid rate limits if needed, but sequential for now)
+        // 4. Enrich with TMDb (Primary) and OMDB (Optional, for ratings)
         const enrichedItems: MovieItem[] = [];
 
         for (const item of traktItems) {
             const data = item.data;
-            try {
-                // Check if we already have it in DB to avoid re-fetching OMDB? 
-                // For now, we'll re-fetch to ensure fresh data, or we could implement a cache check here.
+            const imdbId = data.ids.imdb;
 
-                const omdbData = await getMovieMetadata(data.ids.imdb, omdbKey);
+            try {
+                // Primary: Get data from TMDb
+                const tmdbData = imdbId ? await getMovieInfoForSync(imdbId) : null;
+
+                // Optional: Get IMDb/RT ratings from OMDB (if available and not rate limited)
+                let imdbRating: string | undefined;
+                let rtRating: string | undefined;
+                let metascore: string | undefined;
+
+                if (omdbKey && imdbId) {
+                    try {
+                        const omdbData = await getMovieMetadata(imdbId, omdbKey);
+                        if (omdbData && omdbData.imdbRating !== "N/A") {
+                            imdbRating = omdbData.imdbRating;
+                            // Extract RT rating from Ratings array if present
+                            const rtEntry = omdbData.Ratings?.find((r: any) => r.Source === "Rotten Tomatoes");
+                            if (rtEntry) rtRating = rtEntry.Value;
+                            if (omdbData.Metascore !== "N/A") metascore = omdbData.Metascore;
+                        }
+                    } catch (e) {
+                        // OMDB failed (rate limit?), continue without ratings
+                        console.log(`OMDB unavailable for ${data.title}, using TMDb only`);
+                    }
+                }
+
                 enrichedItems.push({
                     id: data.ids.trakt,
-                    imdbId: data.ids.imdb,
+                    imdbId: imdbId,
                     title: data.title,
                     year: (data.year ?? "Unknown").toString(),
-                    posterUrl: omdbData.Poster !== "N/A" ? omdbData.Poster : null,
+                    posterUrl: tmdbData?.posterUrl || null,
                     type: item.type,
                     source: "trakt",
                     date: item.date,
-                    list: item.list || "watched", // Default to watched if not specified
-                    // Extended Metadata
-                    Director: omdbData.Director,
-                    Actors: omdbData.Actors,
-                    Plot: omdbData.Plot,
-                    Genre: omdbData.Genre,
-                    Runtime: omdbData.Runtime
+                    list: item.list || "watched",
+                    // TMDb Metadata
+                    Director: tmdbData?.director || "N/A",
+                    Actors: tmdbData?.actors || "N/A",
+                    Plot: tmdbData?.plot || "N/A",
+                    Genre: tmdbData?.genres || "N/A",
+                    Runtime: tmdbData?.runtime || "N/A",
+                    tmdbRating: tmdbData?.tmdbRating,
+                    // OMDB Ratings (optional)
+                    imdbRating: imdbRating,
+                    rtRating: rtRating,
+                    Metascore: metascore,
                 });
             } catch (e) {
-                console.error(`Failed to fetch OMDB for ${data.title}`, e);
+                console.error(`Failed to fetch data for ${data.title}`, e);
                 enrichedItems.push({
                     id: data.ids.trakt,
-                    imdbId: data.ids.imdb,
+                    imdbId: imdbId,
                     title: data.title,
                     year: (data.year ?? "Unknown").toString(),
                     posterUrl: null,
@@ -172,3 +197,4 @@ export async function POST() {
         return NextResponse.json({ error: e.message || "Sync failed" }, { status: 500 });
     }
 }
+

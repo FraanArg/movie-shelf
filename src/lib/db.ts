@@ -24,7 +24,11 @@ export interface MovieItem {
     Plot?: string;
     Genre?: string;
     Runtime?: string;
+    // Ratings
+    tmdbRating?: number;
     imdbRating?: string;
+    rtRating?: string;
+    Metascore?: string;
     plays?: number;
 }
 
