@@ -11,13 +11,18 @@ export async function POST() {
     const clientId = process.env.NEXT_PUBLIC_TRAKT_CLIENT_ID;
     const omdbKey = process.env.OMDB_API_KEY;
 
+    console.log("Sync started:", { hasToken: !!token, hasClientId: !!clientId, hasOmdbKey: !!omdbKey });
+
     if (!token || !clientId || !omdbKey) {
+        console.log("Missing credentials:", { token: !!token, clientId: !!clientId, omdbKey: !!omdbKey });
         return NextResponse.json({ error: "Missing credentials" }, { status: 401 });
     }
 
     try {
         // 1. Fetch Local Manual Movies
         const localMovies = await getLocalMovies();
+        console.log("Local movies:", localMovies.length);
+
         const formattedLocalMovies: MovieItem[] = localMovies.map(m => ({
             id: parseInt(m.id.replace("tt", ""), 10) || Math.random(),
             imdbId: m.id,
@@ -26,7 +31,7 @@ export async function POST() {
             posterUrl: m.posterUrl,
             type: m.type as "movie" | "series",
             source: "local",
-            date: new Date().toISOString() // Or store added date in local-library
+            date: new Date().toISOString()
         }));
 
         // 2. Fetch ALL Trakt History (Pagination Loop)
@@ -34,9 +39,13 @@ export async function POST() {
         let page = 1;
         let hasMore = true;
 
+        console.log("Fetching Trakt history...");
+
         // Safety limit to prevent infinite loops during dev
         while (hasMore && page < 20) {
+            console.log(`Fetching page ${page}...`);
             const history = await getWatchedHistory(token, clientId, page, 100);
+            console.log(`Page ${page} returned ${history.length} items`);
             if (history.length === 0) {
                 hasMore = false;
             } else {
@@ -44,6 +53,8 @@ export async function POST() {
                 page++;
             }
         }
+
+        console.log("Total history items:", allHistory.length);
 
         // 3. Process Trakt Data
         const processedIds = new Set();
