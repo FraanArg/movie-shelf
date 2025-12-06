@@ -120,20 +120,23 @@ function SyncButton() {
                         }
 
                         if (data.stage === "enrich") {
-                            // Show item count progress for enrichment stage
                             const enrichPercent = 25 + Math.round((data.current / data.total) * 70);
                             setProgress({ percent: enrichPercent, message: data.message || `${data.current}/${data.total}` });
                         } else {
                             setProgress({ percent: data.percent || 0, message: data.message || "Syncing..." });
                         }
-                    } catch (e) {
+                    } catch (parseError) {
                         // Skip unparseable lines
                     }
                 }
             }
+
+            // Stream ended normally - refresh the page
+            router.refresh();
         } catch (e: any) {
             console.error(e);
             alert(`Sync failed: ${e.message}`);
+        } finally {
             setSyncing(false);
             setProgress(null);
         }
@@ -172,7 +175,7 @@ function SyncButton() {
                 }} />
             )}
             <span style={{ position: "relative", zIndex: 1 }}>
-                {syncing && progress ? `${progress.percent}%` : "Sync"}
+                {syncing ? (progress ? `${progress.percent}%` : "Syncing...") : "Sync"}
             </span>
         </button>
     );
