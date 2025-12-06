@@ -1,7 +1,11 @@
 import fs from "fs/promises";
 import path from "path";
 
-const DB_PATH = path.join(process.cwd(), "data", "db.json");
+// Use /tmp on Vercel (serverless), otherwise use project directory
+const isVercel = process.env.VERCEL === "1";
+const DB_PATH = isVercel
+    ? "/tmp/db.json"
+    : path.join(process.cwd(), "data", "db.json");
 
 export interface MovieItem {
     id: number | string;
