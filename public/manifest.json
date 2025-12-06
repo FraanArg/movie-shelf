@@ -1,0 +1,21 @@
+{
+  "name": "Movie Shelf",
+  "short_name": "MovieShelf",
+  "description": "A digital bookshelf for your movie and TV show collection.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

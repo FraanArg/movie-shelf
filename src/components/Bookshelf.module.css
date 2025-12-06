@@ -1,0 +1,33 @@
+.shelfContainer {
+    margin-bottom: 40px;
+    position: relative;
+    padding: 0 20px;
+}
+
+.label {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: none;
+    /* Hide label for cleaner look */
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 40px;
+    /* Increased gap for floating look */
+    padding: 20px 0;
+}
+
+/* Removed shelfBase styles entirely */
+.shelfBase {
+    display: none;
+}
+
+/* Wood texture option (commented out for now, sticking to modern dark) */
+/*
+.shelfBase {
+  background: #5d4037;
+  background-image: url('/wood-pattern.png');
+}
+*/
