@@ -1,11 +1,12 @@
+import { kv } from "@vercel/kv";
 import fs from "fs/promises";
 import path from "path";
 
-// Use /tmp on Vercel (serverless), otherwise use project directory
-const isVercel = process.env.VERCEL === "1";
-const DB_PATH = isVercel
-    ? "/tmp/db.json"
-    : path.join(process.cwd(), "data", "db.json");
+const DB_KEY = "movies";
+const LOCAL_DB_PATH = path.join(process.cwd(), "data", "db.json");
+
+// Check if we're running on Vercel with KV configured
+const isVercelKV = !!process.env.KV_REST_API_URL;
 
 export interface MovieItem {
     id: number | string;
@@ -27,40 +28,71 @@ export interface MovieItem {
     plays?: number;
 }
 
-// In-Memory Cache
-let dbCache: MovieItem[] | null = null;
+// In-Memory Cache for local development
+let localCache: MovieItem[] | null = null;
 
-export const getDB = async (): Promise<MovieItem[]> => {
-    if (dbCache) return dbCache;
-
+// ============ VERCEL KV FUNCTIONS ============
+async function getFromKV(): Promise<MovieItem[]> {
     try {
-        const data = await fs.readFile(DB_PATH, "utf-8");
-        dbCache = JSON.parse(data);
-        return dbCache || [];
+        const data = await kv.get<MovieItem[]>(DB_KEY);
+        return data || [];
     } catch (error) {
-        // If file doesn't exist, return empty array
+        console.error("KV get error:", error);
         return [];
     }
-};
+}
 
-export const saveDB = async (items: MovieItem[]) => {
-    const dir = path.dirname(DB_PATH);
+async function saveToKV(items: MovieItem[]): Promise<void> {
+    try {
+        await kv.set(DB_KEY, items);
+    } catch (error) {
+        console.error("KV set error:", error);
+        throw error;
+    }
+}
+
+// ============ LOCAL FILE FUNCTIONS ============
+async function getFromFile(): Promise<MovieItem[]> {
+    if (localCache) return localCache;
+
+    try {
+        const data = await fs.readFile(LOCAL_DB_PATH, "utf-8");
+        localCache = JSON.parse(data);
+        return localCache || [];
+    } catch (error) {
+        return [];
+    }
+}
+
+async function saveToFile(items: MovieItem[]): Promise<void> {
+    const dir = path.dirname(LOCAL_DB_PATH);
     try {
         await fs.access(dir);
     } catch {
         await fs.mkdir(dir, { recursive: true });
     }
+    localCache = items;
+    await fs.writeFile(LOCAL_DB_PATH, JSON.stringify(items, null, 2));
+}
 
-    // Update Cache
-    dbCache = items;
-
-    await fs.writeFile(DB_PATH, JSON.stringify(items, null, 2));
+// ============ UNIFIED API ============
+export const getDB = async (): Promise<MovieItem[]> => {
+    if (isVercelKV) {
+        return getFromKV();
+    }
+    return getFromFile();
 };
 
-export const addToDB = async (newItems: MovieItem[]) => {
+export const saveDB = async (items: MovieItem[]): Promise<void> => {
+    if (isVercelKV) {
+        return saveToKV(items);
+    }
+    return saveToFile(items);
+};
+
+export const addToDB = async (newItems: MovieItem[]): Promise<MovieItem[]> => {
     const current = await getDB();
     const existingIds = new Set(current.map((i) => i.imdbId || i.id));
-
     const uniqueNew = newItems.filter((i) => !existingIds.has(i.imdbId || i.id));
 
     if (uniqueNew.length > 0) {
@@ -71,7 +103,6 @@ export const addToDB = async (newItems: MovieItem[]) => {
     return current;
 };
 
-export const updateDB = async (items: MovieItem[]) => {
-    // Full replace/update logic if needed, usually saveDB is enough
+export const updateDB = async (items: MovieItem[]): Promise<void> => {
     await saveDB(items);
 };
