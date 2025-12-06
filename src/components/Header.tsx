@@ -83,37 +83,13 @@ function SyncButton() {
 
         try {
             const response = await fetch("/api/sync", { method: "POST" });
+            const data = await response.json();
 
-            // Try to read the stream for completion
-            const reader = response.body?.getReader();
-            if (reader) {
-                const decoder = new TextDecoder();
-                let result = "";
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    result += decoder.decode(value);
-                }
-
-                // Parse the last data event
-                const lines = result.split("\n\n").filter(l => l.startsWith("data: "));
-                const lastLine = lines[lines.length - 1];
-                if (lastLine) {
-                    try {
-                        const data = JSON.parse(lastLine.replace("data: ", ""));
-                        if (data.done) {
-                            setStatus(`✓ ${data.count} items`);
-                        } else if (data.error) {
-                            throw new Error(data.error);
-                        }
-                    } catch {
-                        // Parse error, but sync likely completed
-                        setStatus("✓ Done!");
-                    }
-                }
+            if (!response.ok) {
+                throw new Error(data.error || "Sync failed");
             }
 
+            setStatus(`✓ ${data.count} items`);
             setTimeout(() => {
                 router.refresh();
                 setSyncing(false);
@@ -123,6 +99,7 @@ function SyncButton() {
         } catch (e: any) {
             console.error(e);
             setStatus("Failed");
+            alert(`Sync failed: ${e.message}`);
             setTimeout(() => {
                 setSyncing(false);
                 setStatus(null);
