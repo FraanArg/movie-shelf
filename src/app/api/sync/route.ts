@@ -67,14 +67,14 @@ export async function POST() {
                 if (processedIds.has(item.movie.ids.trakt)) continue;
                 if (existingImdbIds.has(imdbId)) continue; // Already in DB
                 processedIds.add(item.movie.ids.trakt);
-                newItems.push({ type: "movie", data: item.movie, date: item.watched_at });
+                newItems.push({ type: "movie", data: item.movie, date: item.watched_at, list: "watched" });
             } else if (item.type === "episode") {
                 const showId = item.show.ids.trakt;
                 const imdbId = item.show.ids.imdb;
                 if (processedIds.has(showId)) continue;
                 if (existingImdbIds.has(imdbId)) continue; // Already in DB
                 processedIds.add(showId);
-                newItems.push({ type: "series", data: item.show, date: item.watched_at });
+                newItems.push({ type: "series", data: item.show, date: item.watched_at, list: "watched" });
             }
         }
 
