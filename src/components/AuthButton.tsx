@@ -1,10 +1,15 @@
 "use client";
 
-import { SignInButton, SignOutButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 export default function AuthButton() {
     return (
-        <>
+        <div style={{
+            display: "flex",
+            alignItems: "center",
+            // Debug border to see if component renders
+            // border: "1px solid red" 
+        }}>
             <SignedOut>
                 <SignInButton mode="modal">
                     <button
@@ -37,6 +42,6 @@ export default function AuthButton() {
                     }}
                 />
             </SignedIn>
-        </>
+        </div>
     );
 }
