@@ -9,6 +9,9 @@ import SearchOverlay from "@/components/SearchOverlay";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import OfflineIndicator from "@/components/OfflineIndicator";
+// TODO: Re-enable once Clerk/Convex are configured
+// import { ClerkProvider } from "@clerk/nextjs";
+// import { ConvexClientProvider } from "@/components/ConvexProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const oswald = Oswald({ subsets: ["latin"], variable: "--font-oswald" });
@@ -72,4 +75,3 @@ export default function RootLayout({
     </html>
   );
 }
-

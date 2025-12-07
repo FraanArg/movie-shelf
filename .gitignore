@@ -44,3 +44,6 @@ next-env.d.ts
 *.db
 data/
 .env*.local
+
+# clerk configuration (can include secrets)
+/.clerk/

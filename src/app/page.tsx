@@ -43,8 +43,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
   // Deduplicate
   const uniqueItems = Array.from(new Map(items.map(m => [m.imdbId || m.id, m])).values());
 
+  // Separate watched from watchlist - explicitly only show watched or undefined (local manual adds)
   const watchlistMovies = uniqueItems.filter(m => m.list === "watchlist");
-  const libraryMovies = uniqueItems.filter(m => m.list !== "watchlist");
+  const libraryMovies = uniqueItems.filter(m => m.list === "watched" || m.list === undefined || m.list === null);
 
   // Filter Logic
   let displayedMovies = libraryMovies;

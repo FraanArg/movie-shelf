@@ -6,6 +6,8 @@ import { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import XRayToggle from "./XRayToggle";
 import MagneticButton from "./MagneticButton";
+// TODO: Re-enable once Clerk is configured
+// import AuthButton from "./AuthButton";
 
 export default function Header() {
     const pathname = usePathname();
@@ -27,10 +29,10 @@ export default function Header() {
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "15px 30px",
-                background: "transparent", // Fully transparent to let backdrop show
-                backdropFilter: "none", // Handled by global glass classes if needed, but header should be clean
+                background: "transparent",
+                backdropFilter: "none",
                 WebkitBackdropFilter: "none",
-                borderBottom: "none", // Cleaner look
+                borderBottom: "none",
             }}
         >
             <div style={{ fontWeight: "700", fontSize: "1.2rem", letterSpacing: "-0.5px" }}>
@@ -67,6 +69,8 @@ export default function Header() {
                 <MagneticButton><SyncButton /></MagneticButton>
                 <MagneticButton><XRayToggle /></MagneticButton>
                 <MagneticButton><ThemeToggle /></MagneticButton>
+                {/* TODO: Re-enable once Clerk is configured */}
+                {/* <MagneticButton><AuthButton /></MagneticButton> */}
             </div>
         </header>
     );
