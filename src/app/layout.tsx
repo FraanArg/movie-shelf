@@ -9,9 +9,8 @@ import SearchOverlay from "@/components/SearchOverlay";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import OfflineIndicator from "@/components/OfflineIndicator";
-// TODO: Re-enable once Clerk/Convex are configured
-// import { ClerkProvider } from "@clerk/nextjs";
-// import { ConvexClientProvider } from "@/components/ConvexProvider";
+import { ClerkProvider } from "@clerk/nextjs";
+import { ConvexClientProvider } from "@/components/ConvexProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const oswald = Oswald({ subsets: ["latin"], variable: "--font-oswald" });
@@ -41,37 +40,40 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Preconnect to external APIs for faster loads */}
-        <link rel="preconnect" href="https://api.trakt.tv" />
-        <link rel="preconnect" href="https://www.omdbapi.com" />
-        <link rel="preconnect" href="https://api.themoviedb.org" />
-        <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://m.media-amazon.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://api.trakt.tv" />
-        <link rel="dns-prefetch" href="https://www.omdbapi.com" />
-        <link rel="dns-prefetch" href="https://api.themoviedb.org" />
-      </head>
-      <body className={`${inter.variable} ${oswald.variable} ${inter.className}`}>
-        <ThemeProvider
-          attribute="data-theme"
-          defaultTheme="dark"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <BackdropProvider>
-            <XRayProvider>
-              <Header />
-              <SearchOverlay />
-              <FloatingActionButton />
-              <KeyboardShortcuts />
-              <OfflineIndicator />
-              {children}
-            </XRayProvider>
-          </BackdropProvider>
-        </ThemeProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <link rel="preconnect" href="https://api.trakt.tv" />
+          <link rel="preconnect" href="https://www.omdbapi.com" />
+          <link rel="preconnect" href="https://api.themoviedb.org" />
+          <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="anonymous" />
+          <link rel="preconnect" href="https://m.media-amazon.com" crossOrigin="anonymous" />
+          <link rel="dns-prefetch" href="https://api.trakt.tv" />
+          <link rel="dns-prefetch" href="https://www.omdbapi.com" />
+          <link rel="dns-prefetch" href="https://api.themoviedb.org" />
+        </head>
+        <body className={`${inter.variable} ${oswald.variable} ${inter.className}`}>
+          <ConvexClientProvider>
+            <ThemeProvider
+              attribute="data-theme"
+              defaultTheme="dark"
+              enableSystem={false}
+              disableTransitionOnChange
+            >
+              <BackdropProvider>
+                <XRayProvider>
+                  <Header />
+                  <SearchOverlay />
+                  <FloatingActionButton />
+                  <KeyboardShortcuts />
+                  <OfflineIndicator />
+                  {children}
+                </XRayProvider>
+              </BackdropProvider>
+            </ThemeProvider>
+          </ConvexClientProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

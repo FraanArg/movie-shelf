@@ -6,8 +6,7 @@ import { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import XRayToggle from "./XRayToggle";
 import MagneticButton from "./MagneticButton";
-// TODO: Re-enable once Clerk is configured
-// import AuthButton from "./AuthButton";
+import AuthButton from "./AuthButton";
 
 export default function Header() {
     const pathname = usePathname();
@@ -69,8 +68,7 @@ export default function Header() {
                 <MagneticButton><SyncButton /></MagneticButton>
                 <MagneticButton><XRayToggle /></MagneticButton>
                 <MagneticButton><ThemeToggle /></MagneticButton>
-                {/* TODO: Re-enable once Clerk is configured */}
-                {/* <MagneticButton><AuthButton /></MagneticButton> */}
+                <MagneticButton><AuthButton /></MagneticButton>
             </div>
         </header>
     );
