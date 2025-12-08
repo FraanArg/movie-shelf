@@ -114,11 +114,32 @@ export async function getMovieInfoForSync(imdbId: string): Promise<{
     const details = await getMovieDetails(imdbId);
     if (!details) return null;
 
-    const directors = details.credits?.crew
+    // For movies: get Director from crew
+    // For TV shows: use created_by field
+    let directors = details.credits?.crew
         ?.filter(c => c.job === "Director")
         ?.map(c => c.name)
         ?.slice(0, 3)
-        ?.join(", ") || "N/A";
+        ?.join(", ") || "";
+
+    // If no directors found (TV shows), try created_by
+    if (!directors && (details as any).created_by?.length > 0) {
+        directors = (details as any).created_by
+            .map((c: any) => c.name)
+            .slice(0, 3)
+            .join(", ");
+    }
+
+    // If still no directors, try executive producers for TV
+    if (!directors && details.credits?.crew?.length > 0) {
+        directors = details.credits.crew
+            .filter(c => c.job === "Executive Producer" || c.department === "Directing")
+            .slice(0, 2)
+            .map(c => c.name)
+            .join(", ") || "N/A";
+    }
+
+    if (!directors) directors = "N/A";
 
     const actors = details.credits?.cast
         ?.slice(0, 5)
