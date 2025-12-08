@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getWatchedHistory, getWatchlist } from "@/lib/trakt";
+import { getWatchedMovies, getWatchedShows, getWatchlist } from "@/lib/trakt";
 import { getMovieInfoForSync } from "@/lib/tmdb";
 import { getLocalMovies } from "@/lib/local-library";
 import { getDB, saveDB, MovieItem } from "@/lib/db";
 
 // Batch size per sync (increased for faster syncing)
-const BATCH_SIZE = 75;
+const BATCH_SIZE = 100;
 
 export async function POST() {
     const cookieStore = await cookies();
@@ -22,6 +22,7 @@ export async function POST() {
         // 1. Get existing items from DB
         const existingItems = await getDB();
         const existingImdbIds = new Set(existingItems.map(m => m.imdbId).filter(Boolean));
+        const existingTraktIds = new Set(existingItems.map(m => m.id).filter(Boolean));
         console.log("Existing items in DB:", existingItems.length);
 
         // 2. Fetch Local Movies (quick)
@@ -39,20 +40,14 @@ export async function POST() {
                 date: new Date().toISOString()
             }));
 
-        // 3. Fetch ALL Trakt History (this is fast - just IDs)
-        let allHistory: any[] = [];
-        let page = 1;
-        let hasMore = true;
+        // 3. Fetch ALL Trakt Watched Movies and Shows (complete data, not paginated)
+        const [watchedMovies, watchedShows] = await Promise.all([
+            getWatchedMovies(token, clientId),
+            getWatchedShows(token, clientId),
+        ]);
 
-        while (hasMore && page <= 25) { // Up to 2500 items
-            const history = await getWatchedHistory(token, clientId, page, 100);
-            if (history.length === 0) {
-                hasMore = false;
-            } else {
-                allHistory = [...allHistory, ...history];
-                page++;
-            }
-        }
+        console.log("Trakt watched movies:", watchedMovies.length);
+        console.log("Trakt watched shows:", watchedShows.length);
 
         // 4. Fetch Watchlist
         const watchlist = await getWatchlist(token, clientId);
@@ -61,47 +56,65 @@ export async function POST() {
         const processedIds = new Set();
         const newItems: any[] = [];
 
-        // Build a set of existing identifiers (both IMDB and Trakt IDs)
-        const existingTraktIds = new Set(existingItems.map(m => m.id).filter(Boolean));
+        // Process watched movies
+        for (const item of watchedMovies) {
+            const movie = item.movie;
+            if (!movie?.ids) continue;
 
-        for (const item of allHistory) {
-            if (item.type === "movie") {
-                const traktId = item.movie.ids.trakt;
-                const imdbId = item.movie.ids.imdb;
+            const traktId = movie.ids.trakt;
+            const imdbId = movie.ids.imdb;
 
-                if (processedIds.has(traktId)) continue;
-                // Check both IMDB and Trakt ID for existing
-                if (imdbId && existingImdbIds.has(imdbId)) continue;
-                if (existingTraktIds.has(traktId)) continue;
+            if (processedIds.has(traktId)) continue;
+            if (imdbId && existingImdbIds.has(imdbId)) continue;
+            if (existingTraktIds.has(traktId)) continue;
 
-                processedIds.add(traktId);
-                newItems.push({ type: "movie", data: item.movie, date: item.watched_at, list: "watched" });
-            } else if (item.type === "episode") {
-                const showId = item.show.ids.trakt;
-                const imdbId = item.show.ids.imdb;
-
-                if (processedIds.has(showId)) continue;
-                if (imdbId && existingImdbIds.has(imdbId)) continue;
-                if (existingTraktIds.has(showId)) continue;
-
-                processedIds.add(showId);
-                newItems.push({ type: "series", data: item.show, date: item.watched_at, list: "watched" });
-            }
+            processedIds.add(traktId);
+            newItems.push({
+                type: "movie",
+                data: movie,
+                date: item.last_watched_at || new Date().toISOString(),
+                list: "watched"
+            });
         }
 
+        // Process watched shows
+        for (const item of watchedShows) {
+            const show = item.show;
+            if (!show?.ids) continue;
+
+            const traktId = show.ids.trakt;
+            const imdbId = show.ids.imdb;
+
+            if (processedIds.has(traktId)) continue;
+            if (imdbId && existingImdbIds.has(imdbId)) continue;
+            if (existingTraktIds.has(traktId)) continue;
+
+            processedIds.add(traktId);
+            newItems.push({
+                type: "series",
+                data: show,
+                date: item.last_watched_at || new Date().toISOString(),
+                list: "watched"
+            });
+        }
+
+        // Process watchlist
         for (const item of watchlist) {
-            if (item.type === "movie") {
+            if (item.type === "movie" && item.movie?.ids) {
+                const traktId = item.movie.ids.trakt;
                 const imdbId = item.movie.ids.imdb;
-                if (processedIds.has(item.movie.ids.trakt)) continue;
-                if (existingImdbIds.has(imdbId)) continue;
-                processedIds.add(item.movie.ids.trakt);
+                if (processedIds.has(traktId)) continue;
+                if (imdbId && existingImdbIds.has(imdbId)) continue;
+                if (existingTraktIds.has(traktId)) continue;
+                processedIds.add(traktId);
                 newItems.push({ type: "movie", data: item.movie, date: item.listed_at, list: "watchlist" });
-            } else if (item.type === "show") {
-                const showId = item.show.ids.trakt;
+            } else if (item.type === "show" && item.show?.ids) {
+                const traktId = item.show.ids.trakt;
                 const imdbId = item.show.ids.imdb;
-                if (processedIds.has(showId)) continue;
-                if (existingImdbIds.has(imdbId)) continue;
-                processedIds.add(showId);
+                if (processedIds.has(traktId)) continue;
+                if (imdbId && existingImdbIds.has(imdbId)) continue;
+                if (existingTraktIds.has(traktId)) continue;
+                processedIds.add(traktId);
                 newItems.push({ type: "series", data: item.show, date: item.listed_at, list: "watchlist" });
             }
         }
@@ -164,6 +177,8 @@ export async function POST() {
             synced: batch.length,
             remaining: remaining,
             total: uniqueCollection.length,
+            traktMovies: watchedMovies.length,
+            traktShows: watchedShows.length,
             message: remaining > 0 ? `Click Sync again (${remaining} more)` : "All synced!"
         });
 

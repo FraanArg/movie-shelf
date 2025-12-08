@@ -172,6 +172,24 @@ export const getWatchedShows = async (accessToken: string, clientId: string) => 
     return response.json();
 };
 
+// Get ALL watched movies in one call (not paginated like history)
+export const getWatchedMovies = async (accessToken: string, clientId: string) => {
+    const response = await fetch(`${TRAKT_API_URL}/sync/watched/movies`, {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+            "trakt-api-version": "2",
+            "trakt-api-key": clientId,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch watched movies");
+    }
+
+    return response.json();
+};
+
 // Get detailed progress for a specific show
 export interface ShowProgress {
     aired: number;
