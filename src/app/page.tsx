@@ -15,6 +15,7 @@ import HeroSpotlight from "@/components/HeroSpotlight";
 import TimeTravelTimeline from "@/components/TimeTravelTimeline";
 import QuickFilters from "@/components/QuickFilters";
 import MoodFilter from "@/components/MoodFilter";
+import RecommendationRow from "@/components/RecommendationRow";
 import { MOODS } from "@/components/MoodFilter";
 import { fetchMoviesAction } from "@/app/actions";
 import { getDB } from "@/lib/db";
@@ -200,6 +201,17 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           <MoodFilter />
         </Suspense>
       </div>
+
+      {/* Personalized Recommendations - pick a random highly-rated movie */}
+      {libraryMovies.length > 5 && (() => {
+        const highRated = libraryMovies.filter(m => parseFloat(m.imdbRating || "0") >= 7.5 && m.imdbId);
+        if (highRated.length > 0) {
+          const randomIndex = Math.floor(Math.random() * Math.min(highRated.length, 20));
+          const basedOn = highRated[randomIndex];
+          return <RecommendationRow basedOnTitle={basedOn.title} basedOnImdbId={basedOn.imdbId} />;
+        }
+        return null;
+      })()}
 
       {!isAuthenticated && clientId && (
         <div style={{ padding: "0 40px 20px 40px" }}>
