@@ -35,14 +35,16 @@ export default async function ProfilePage() {
     // Deduplicate with null checks
     const uniqueItems = Array.from(new Map(items.filter(m => m).map(m => [m.imdbId || m.id, m])).values());
 
+    // Filter to ONLY watched items (exclude watchlist for stats)
+    const watchedItems = uniqueItems.filter(i => i.list !== "watchlist");
 
-    // Calculate Stats
-    const totalMovies = uniqueItems.filter(i => i.type === "movie").length;
-    const totalShows = uniqueItems.filter(i => i.type === "series").length;
+    // Calculate Stats based on WATCHED items only
+    const totalMovies = watchedItems.filter(i => i.type === "movie").length;
+    const totalShows = watchedItems.filter(i => i.type === "series").length;
 
-    // Decades distribution
+    // Decades distribution (watched only)
     const decades: Record<string, number> = {};
-    uniqueItems.forEach(item => {
+    watchedItems.forEach(item => {
         if (item.year) {
             const decade = Math.floor(parseInt(item.year) / 10) * 10;
             const key = `${decade}s`;
@@ -53,9 +55,9 @@ export default async function ProfilePage() {
     const sortedDecades = Object.entries(decades).sort((a, b) => parseInt(b[0]) - parseInt(a[0]));
     const maxCount = Math.max(...Object.values(decades), 1);
 
-    // Genre aggregation for radar chart
+    // Genre aggregation for radar chart (watched only)
     const genreCounts: Record<string, number> = {};
-    uniqueItems.forEach(item => {
+    watchedItems.forEach(item => {
         if (item.Genre && item.Genre !== "N/A") {
             const genres = item.Genre.split(", ");
             genres.forEach((genre: string) => {
@@ -72,9 +74,9 @@ export default async function ProfilePage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 8);
 
-    // Director aggregation
+    // Director aggregation (watched only)
     const directorMap: Record<string, { count: number; movies: string[] }> = {};
-    uniqueItems.forEach(item => {
+    watchedItems.forEach(item => {
         if (item.Director && item.Director !== "N/A") {
             const directors = item.Director.split(", ");
             directors.forEach((director: string) => {
@@ -95,9 +97,9 @@ export default async function ProfilePage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-    // Actor aggregation
+    // Actor aggregation (watched only)
     const actorMap: Record<string, { count: number; movies: string[] }> = {};
-    uniqueItems.forEach(item => {
+    watchedItems.forEach(item => {
         if (item.Actors && item.Actors !== "N/A") {
             const actors = item.Actors.split(", ");
             actors.forEach((actor: string) => {
@@ -137,7 +139,7 @@ export default async function ProfilePage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "40px" }}>
                 <StatCard label="Movies Watched" value={totalMovies} />
                 <StatCard label="TV Shows" value={totalShows} />
-                <StatCard label="Total Items" value={uniqueItems.length} />
+                <StatCard label="Total Items" value={watchedItems.length} />
             </div>
 
             {/* Quick Links */}
@@ -182,7 +184,7 @@ export default async function ProfilePage() {
             </div>
 
             {/* Viewing Activity Heatmap */}
-            <ViewingHeatmap watchDates={uniqueItems.filter(m => m.date).map(m => m.date)} />
+            <ViewingHeatmap watchDates={watchedItems.filter(m => m.date).map(m => m.date)} />
 
             <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
                 <h2 style={{ fontSize: "1.5rem", marginBottom: "20px" }}>Era Distribution</h2>
@@ -220,10 +222,10 @@ export default async function ProfilePage() {
             <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
                 <h2 style={{ fontSize: "1.5rem", marginBottom: "10px" }}>Collection Badges</h2>
                 <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>
-                    {getEarnedBadges(uniqueItems, genreCounts).length} of {getAllBadges().length} earned
+                    {getEarnedBadges(watchedItems, genreCounts).length} of {getAllBadges().length} earned
                 </p>
                 <BadgeGrid
-                    earnedBadges={getEarnedBadges(uniqueItems, genreCounts)}
+                    earnedBadges={getEarnedBadges(watchedItems, genreCounts)}
                     allBadges={getAllBadges()}
                 />
             </div>
