@@ -5,8 +5,8 @@ import { getMovieInfoForSync } from "@/lib/tmdb";
 import { getLocalMovies } from "@/lib/local-library";
 import { getDB, saveDB, MovieItem } from "@/lib/db";
 
-// Batch size per sync (keep under 10s timeout)
-const BATCH_SIZE = 25;
+// Batch size per sync (increased for faster syncing)
+const BATCH_SIZE = 75;
 
 export async function POST() {
     const cookieStore = await cookies();
@@ -44,7 +44,7 @@ export async function POST() {
         let page = 1;
         let hasMore = true;
 
-        while (hasMore && page < 15) {
+        while (hasMore && page <= 25) { // Up to 2500 items
             const history = await getWatchedHistory(token, clientId, page, 100);
             if (history.length === 0) {
                 hasMore = false;
