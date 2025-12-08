@@ -166,7 +166,31 @@ export async function POST() {
         }));
 
         // 8. Merge and Save
-        const updatedCollection = [...existingItems, ...formattedLocalMovies, ...enrichedItems];
+        // Also update existing items that are now watched (were watchlist before)
+        const watchedTraktIds = new Set([
+            ...watchedMovies.map((w: any) => w.movie?.ids?.trakt),
+            ...watchedShows.map((w: any) => w.show?.ids?.trakt),
+        ].filter(Boolean));
+
+        const watchedImdbIds = new Set([
+            ...watchedMovies.map((w: any) => w.movie?.ids?.imdb),
+            ...watchedShows.map((w: any) => w.show?.ids?.imdb),
+        ].filter(Boolean));
+
+        // Update existing items from watchlist to watched if they're now watched
+        const updatedExisting = existingItems.map(item => {
+            if (item.list === "watchlist") {
+                const isNowWatched =
+                    (item.imdbId && watchedImdbIds.has(item.imdbId)) ||
+                    (item.id && watchedTraktIds.has(item.id));
+                if (isNowWatched) {
+                    return { ...item, list: "watched" as const };
+                }
+            }
+            return item;
+        });
+
+        const updatedCollection = [...updatedExisting, ...formattedLocalMovies, ...enrichedItems];
         const uniqueCollection = Array.from(new Map(updatedCollection.map(m => [m.imdbId || m.id, m])).values());
         await saveDB(uniqueCollection);
 
