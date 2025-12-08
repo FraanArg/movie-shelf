@@ -19,7 +19,7 @@ export interface MovieItem {
     type: "movie" | "series";
     source: "trakt" | "local";
     date: string; // ISO date string
-    list?: "watched" | "watchlist";
+    list?: "watched" | "watchlist" | "watching";
     // Extended Metadata
     Actors?: string;
     Director?: string;
@@ -35,6 +35,11 @@ export interface MovieItem {
     // User Personal Data
     userRating?: number; // 1-5 star rating
     userNote?: string; // Personal review/notes
+    // TV Show Progress
+    totalEpisodes?: number;
+    watchedEpisodes?: number;
+    totalSeasons?: number;
+    currentSeason?: number;
 }
 
 // In-Memory Cache for local development

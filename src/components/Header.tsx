@@ -14,6 +14,7 @@ export default function Header() {
     const navItems = [
         { label: "Library", href: "/" },
         { label: "Watchlist", href: "/watchlist" },
+        { label: "Watching", href: "/watching" },
         { label: "Stats", href: "/profile" },
         { label: "Connections", href: "/connections" },
         { label: "Search", href: "/search" },
