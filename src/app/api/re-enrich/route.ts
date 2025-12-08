@@ -4,7 +4,7 @@ import { getDB, saveDB, MovieItem } from "@/lib/db";
 import { getMovieInfoForSync } from "@/lib/tmdb";
 
 // Smaller batch to avoid Vercel timeout (10 seconds limit)
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 5;
 
 export async function POST() {
     const cookieStore = await cookies();
@@ -39,17 +39,28 @@ export async function POST() {
         // Create map of updates
         const updates: Map<string, any> = new Map();
         let enrichedCount = 0;
+        const debugInfo: any[] = [];
 
         // Process SEQUENTIALLY (one at a time) to avoid rate limits/timeouts
         for (const item of batch) {
             if (!item.imdbId) continue;
 
             try {
+                console.log(`Enriching: ${item.title} (${item.imdbId})`);
                 const tmdbData = await getMovieInfoForSync(item.imdbId);
-                if (tmdbData && (tmdbData.director !== "N/A" || tmdbData.actors !== "N/A")) {
+
+                debugInfo.push({
+                    title: item.title,
+                    imdbId: item.imdbId,
+                    gotData: !!tmdbData,
+                    director: tmdbData?.director,
+                    actors: tmdbData?.actors?.slice(0, 50),
+                });
+
+                if (tmdbData && tmdbData.director && tmdbData.director !== "N/A") {
                     enrichedCount++;
                     updates.set(item.imdbId, {
-                        Director: tmdbData.director || "N/A",
+                        Director: tmdbData.director,
                         Actors: tmdbData.actors || "N/A",
                         Genre: tmdbData.genres || item.Genre,
                         Plot: tmdbData.plot || item.Plot,
@@ -58,28 +69,34 @@ export async function POST() {
                         tmdbRating: tmdbData.tmdbRating || item.tmdbRating,
                     });
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.error(`Failed to enrich ${item.title}:`, e);
-                // Continue with next item
+                debugInfo.push({
+                    title: item.title,
+                    imdbId: item.imdbId,
+                    error: e.message,
+                });
             }
         }
 
         // Apply updates to items
-        const updatedItems = items.map(item => {
-            const update = item.imdbId ? updates.get(item.imdbId) : null;
-            if (update) {
-                return { ...item, ...update };
-            }
-            return item;
-        });
-
-        await saveDB(updatedItems as MovieItem[]);
+        if (updates.size > 0) {
+            const updatedItems = items.map(item => {
+                const update = item.imdbId ? updates.get(item.imdbId) : null;
+                if (update) {
+                    return { ...item, ...update };
+                }
+                return item;
+            });
+            await saveDB(updatedItems as MovieItem[]);
+        }
 
         return NextResponse.json({
             success: true,
             enriched: enrichedCount,
             remaining: remaining,
             totalNeedingEnrichment: needsEnrichment.length,
+            debug: debugInfo,
             message: remaining > 0
                 ? `Enriched ${enrichedCount} items. ${remaining} more to go.`
                 : `All done! Enriched ${enrichedCount} items.`,
@@ -87,7 +104,7 @@ export async function POST() {
 
     } catch (e: any) {
         console.error("Re-enrich failed:", e);
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 });
     }
 }
 
@@ -104,11 +121,19 @@ export async function GET() {
         const moviesMissing = needsEnrichment.filter(i => i.type === "movie");
         const showsMissing = needsEnrichment.filter(i => i.type === "series");
 
+        // Get sample with IMDB IDs to debug
+        const sampleWithIds = needsEnrichment.slice(0, 10).map(i => ({
+            title: i.title,
+            type: i.type,
+            imdbId: i.imdbId,
+            director: i.Director,
+        }));
+
         return NextResponse.json({
             totalNeedingEnrichment: needsEnrichment.length,
             moviesMissing: moviesMissing.length,
             showsMissing: showsMissing.length,
-            sampleTitles: needsEnrichment.slice(0, 5).map(i => i.title),
+            sampleWithIds,
         });
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
