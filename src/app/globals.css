@@ -459,3 +459,59 @@ h3:hover {
 .poster-wall-item:hover .poster-overlay {
   opacity: 1 !important;
 }
+
+/* ====== MOBILE RESPONSIVE STYLES ====== */
+/* Bottom navigation shown only on mobile */
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: block !important;
+  }
+
+  /* Hide desktop header nav on mobile */
+  header nav {
+    display: none !important;
+  }
+
+  /* Add bottom padding for content above bottom nav */
+  main {
+    padding-bottom: 90px !important;
+  }
+
+  /* Larger touch targets */
+  button,
+  a {
+    min-height: 44px;
+  }
+
+  /* Reduce padding on mobile */
+  .page-content {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
+
+/* Tablet and up - hide bottom nav */
+@media (min-width: 769px) {
+  .bottom-nav {
+    display: none !important;
+  }
+}
+
+/* ====== HOVER LIFT EFFECT ====== */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* ====== HOVER SCALE EFFECT ====== */
+.hover-scale {
+  transition: transform 0.2s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}

@@ -3,6 +3,7 @@ import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Header from "@/components/Header";
+import BottomNav from "@/components/BottomNav";
 import BackdropProvider from "@/components/BackdropProvider";
 import XRayProvider from "@/components/XRayProvider";
 import SearchOverlay from "@/components/SearchOverlay";
@@ -68,6 +69,7 @@ export default function RootLayout({
                   <KeyboardShortcuts />
                   <OfflineIndicator />
                   {children}
+                  <BottomNav />
                 </XRayProvider>
               </BackdropProvider>
             </ThemeProvider>
