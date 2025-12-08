@@ -69,10 +69,6 @@ export default function Header() {
                 <MagneticButton><XRayToggle /></MagneticButton>
                 <MagneticButton><ThemeToggle /></MagneticButton>
                 <MagneticButton><AuthButton /></MagneticButton>
-                {/* Inline TEST button for debugging */}
-                <button style={{ padding: "8px 15px", borderRadius: "20px", background: "#ff0000", color: "#fff", border: "none" }}>
-                    INLINE
-                </button>
             </div>
         </header>
     );
