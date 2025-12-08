@@ -13,6 +13,7 @@ export default function Header() {
 
     const navItems = [
         { label: "Library", href: "/" },
+        { label: "Watchlist", href: "/watchlist" },
         { label: "Stats", href: "/profile" },
         { label: "Connections", href: "/connections" },
         { label: "Search", href: "/search" },
