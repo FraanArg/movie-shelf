@@ -71,7 +71,7 @@ export default function ActorGraph({ movies }: ActorGraphProps) {
 
         movies.forEach(movie => {
             // Add Movie Node
-            if (!movieMap.has(movie.id)) {
+            if (!movieMap.has(String(movie.id))) {
                 const movieNode: GraphNode = {
                     id: `m_${movie.id}`,
                     name: movie.title,
@@ -81,7 +81,7 @@ export default function ActorGraph({ movies }: ActorGraphProps) {
                     connections: 0,
                     imdbId: movie.imdbId,
                 };
-                movieMap.set(movie.id, movieNode);
+                movieMap.set(String(movie.id), movieNode);
             }
 
             // Add Director Nodes
@@ -105,7 +105,7 @@ export default function ActorGraph({ movies }: ActorGraphProps) {
 
                     directorMovies.get(name)!.push(movie);
                     directorMap.get(name)!.connections++;
-                    movieMap.get(movie.id)!.connections++;
+                    movieMap.get(String(movie.id))!.connections++;
                 });
             }
 
@@ -130,7 +130,7 @@ export default function ActorGraph({ movies }: ActorGraphProps) {
 
                     actorMovies.get(name)!.push(movie);
                     actorMap.get(name)!.connections++;
-                    movieMap.get(movie.id)!.connections++;
+                    movieMap.get(String(movie.id))!.connections++;
                 });
             }
         });
