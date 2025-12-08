@@ -186,6 +186,50 @@ export default async function ProfilePage() {
                     allBadges={getAllBadges()}
                 />
             </div>
+
+            {/* Export Section */}
+            <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
+                <h2 style={{ fontSize: "1.5rem", marginBottom: "10px" }}>📦 Export Library</h2>
+                <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>
+                    Download your collection data for backup or analysis
+                </p>
+                <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
+                    <a
+                        href="/api/export?format=json"
+                        download
+                        style={{
+                            padding: "12px 24px",
+                            background: "var(--accent)",
+                            color: "white",
+                            borderRadius: "12px",
+                            textDecoration: "none",
+                            fontWeight: "500",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                        }}
+                    >
+                        📄 Export as JSON
+                    </a>
+                    <a
+                        href="/api/export?format=csv"
+                        download
+                        style={{
+                            padding: "12px 24px",
+                            background: "rgba(255,255,255,0.1)",
+                            color: "var(--foreground)",
+                            borderRadius: "12px",
+                            textDecoration: "none",
+                            fontWeight: "500",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                        }}
+                    >
+                        📊 Export as CSV
+                    </a>
+                </div>
+            </div>
         </main>
     );
 }
