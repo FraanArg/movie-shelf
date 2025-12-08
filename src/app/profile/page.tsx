@@ -6,6 +6,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import GenreRadarChart from "@/components/GenreRadarChart";
 import AffinityStats from "@/components/AffinityStats";
 import BadgeGrid from "@/components/BadgeGrid";
+import ViewingHeatmap from "@/components/ViewingHeatmap";
 import { getEarnedBadges, getAllBadges } from "@/lib/badges";
 
 export default async function ProfilePage() {
@@ -138,6 +139,9 @@ export default async function ProfilePage() {
                 <StatCard label="TV Shows" value={totalShows} />
                 <StatCard label="Total Items" value={uniqueItems.length} />
             </div>
+
+            {/* Viewing Activity Heatmap */}
+            <ViewingHeatmap watchDates={uniqueItems.filter(m => m.date).map(m => m.date)} />
 
             <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
                 <h2 style={{ fontSize: "1.5rem", marginBottom: "20px" }}>Era Distribution</h2>
