@@ -12,12 +12,28 @@ export default async function WatchingPage() {
     }
 
     // Filter for TV shows that are currently being watched
-    // Include shows marked as "watching" OR shows with watchedEpisodes > 0 but < totalEpisodes
+    // Include: shows marked "watching", OR series that are NOT confirmed 95%+ complete
     const watchingShows = items.filter(item => {
         if (item.type !== "series") return false;
+
+        // Explicitly marked as watching - always include
         if (item.list === "watching") return true;
-        // Also include shows with partial progress
-        if (item.watchedEpisodes && item.totalEpisodes && item.watchedEpisodes < item.totalEpisodes) return true;
+
+        // Skip watchlist items - those go to the Watchlist page
+        if (item.list === "watchlist") return false;
+
+        // If we have episode progress data
+        if (item.totalEpisodes && item.totalEpisodes > 0) {
+            const watched = item.watchedEpisodes || 0;
+            const completionPercent = (watched / item.totalEpisodes) * 100;
+            // Include if started but not 95% complete
+            return watched > 0 && completionPercent < 95;
+        }
+
+        // For series without episode data that are marked "watched":
+        // We can't verify completion, so DON'T show them here
+        // (they'll appear in Library which assumes complete)
+        // Exception: if they have list undefined (not synced), skip
         return false;
     });
 
