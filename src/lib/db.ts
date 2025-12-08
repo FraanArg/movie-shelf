@@ -5,8 +5,10 @@ import path from "path";
 const DB_KEY = "movies";
 const LOCAL_DB_PATH = path.join(process.cwd(), "data", "db.json");
 
-// Check if we're running on Vercel with KV configured
-const isVercelKV = !!process.env.KV_REST_API_URL;
+// Check if we're running on Vercel (serverless - read-only filesystem)
+// VERCEL env var is always set on Vercel deployments
+const isVercel = !!process.env.VERCEL;
+const hasKV = !!process.env.KV_REST_API_URL;
 
 export interface MovieItem {
     id: number | string;
@@ -37,6 +39,10 @@ let localCache: MovieItem[] | null = null;
 
 // ============ VERCEL KV FUNCTIONS ============
 async function getFromKV(): Promise<MovieItem[]> {
+    if (!hasKV) {
+        console.warn("KV not configured - returning empty array");
+        return [];
+    }
     try {
         const data = await kv.get<MovieItem[]>(DB_KEY);
         return data || [];
@@ -47,6 +53,10 @@ async function getFromKV(): Promise<MovieItem[]> {
 }
 
 async function saveToKV(items: MovieItem[]): Promise<void> {
+    if (!hasKV) {
+        console.warn("KV not configured - cannot save");
+        return;
+    }
     try {
         await kv.set(DB_KEY, items);
     } catch (error) {
@@ -69,6 +79,12 @@ async function getFromFile(): Promise<MovieItem[]> {
 }
 
 async function saveToFile(items: MovieItem[]): Promise<void> {
+    // Don't try to write files on Vercel
+    if (isVercel) {
+        console.warn("Cannot write files on Vercel - use KV instead");
+        return;
+    }
+
     const dir = path.dirname(LOCAL_DB_PATH);
     try {
         await fs.access(dir);
@@ -81,16 +97,20 @@ async function saveToFile(items: MovieItem[]): Promise<void> {
 
 // ============ UNIFIED API ============
 export const getDB = async (): Promise<MovieItem[]> => {
-    if (isVercelKV) {
+    // On Vercel, always use KV
+    if (isVercel) {
         return getFromKV();
     }
+    // Locally, try file first, fall back to KV if configured
     return getFromFile();
 };
 
 export const saveDB = async (items: MovieItem[]): Promise<void> => {
-    if (isVercelKV) {
+    // On Vercel, always use KV
+    if (isVercel) {
         return saveToKV(items);
     }
+    // Locally, save to file
     return saveToFile(items);
 };
 
