@@ -111,7 +111,7 @@ export default function AffinityStats({ directors, actors }: AffinityStatsProps)
                                     fontSize: "0.8rem",
                                     fontWeight: "600",
                                 }}>
-                                    {director.count} {director.count === 1 ? "film" : "films"}
+                                    {director.count} {director.count === 1 ? "title" : "titles"}
                                 </span>
                             </div>
 
@@ -238,7 +238,7 @@ export default function AffinityStats({ directors, actors }: AffinityStatsProps)
                                     fontSize: "0.8rem",
                                     fontWeight: "600",
                                 }}>
-                                    {actor.count} {actor.count === 1 ? "film" : "films"}
+                                    {actor.count} {actor.count === 1 ? "title" : "titles"}
                                 </span>
                             </div>
 

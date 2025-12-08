@@ -74,8 +74,8 @@ export default async function ProfilePage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 8);
 
-    // Director aggregation (watched only)
-    const directorMap: Record<string, { count: number; movies: string[] }> = {};
+    // Director aggregation (watched only - movies AND shows)
+    const directorMap: Record<string, { count: number; titles: string[] }> = {};
     watchedItems.forEach(item => {
         if (item.Director && item.Director !== "N/A") {
             const directors = item.Director.split(", ");
@@ -83,22 +83,22 @@ export default async function ProfilePage() {
                 const trimmed = director.trim();
                 if (trimmed) {
                     if (!directorMap[trimmed]) {
-                        directorMap[trimmed] = { count: 0, movies: [] };
+                        directorMap[trimmed] = { count: 0, titles: [] };
                     }
                     directorMap[trimmed].count++;
-                    directorMap[trimmed].movies.push(item.title);
+                    directorMap[trimmed].titles.push(item.title);
                 }
             });
         }
     });
 
     const topDirectors = Object.entries(directorMap)
-        .map(([name, data]) => ({ name, count: data.count, movies: data.movies }))
+        .map(([name, data]) => ({ name, count: data.count, movies: data.titles }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-    // Actor aggregation (watched only)
-    const actorMap: Record<string, { count: number; movies: string[] }> = {};
+    // Actor aggregation (watched only - movies AND shows)
+    const actorMap: Record<string, { count: number; titles: string[] }> = {};
     watchedItems.forEach(item => {
         if (item.Actors && item.Actors !== "N/A") {
             const actors = item.Actors.split(", ");
@@ -106,17 +106,17 @@ export default async function ProfilePage() {
                 const trimmed = actor.trim();
                 if (trimmed) {
                     if (!actorMap[trimmed]) {
-                        actorMap[trimmed] = { count: 0, movies: [] };
+                        actorMap[trimmed] = { count: 0, titles: [] };
                     }
                     actorMap[trimmed].count++;
-                    actorMap[trimmed].movies.push(item.title);
+                    actorMap[trimmed].titles.push(item.title);
                 }
             });
         }
     });
 
     const topActors = Object.entries(actorMap)
-        .map(([name, data]) => ({ name, count: data.count, movies: data.movies }))
+        .map(([name, data]) => ({ name, count: data.count, movies: data.titles }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
