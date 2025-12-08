@@ -32,6 +32,9 @@ export interface MovieItem {
     rtRating?: string;
     Metascore?: string;
     plays?: number;
+    // User Personal Data
+    userRating?: number; // 1-5 star rating
+    userNote?: string; // Personal review/notes
 }
 
 // In-Memory Cache for local development

@@ -7,6 +7,7 @@ import { getMovieMetadata } from "@/lib/omdb";
 import TheatricalToggle from "@/components/TheatricalToggle";
 import ColorExtractor from "@/components/ColorExtractor";
 import SimilarMovies from "@/components/SimilarMovies";
+import MovieNotes from "@/components/MovieNotes";
 
 export default async function MovieDetail({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -248,6 +249,9 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
                             loading="lazy"
                         ></iframe>
                     </div>
+
+                    {/* User Notes and Rating */}
+                    <MovieNotes imdbId={id} />
 
                     {/* Similar Movies */}
                     <Suspense fallback={
