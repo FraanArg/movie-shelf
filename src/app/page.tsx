@@ -45,8 +45,27 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
   const uniqueItems = Array.from(new Map(items.map(m => [m.imdbId || m.id, m])).values());
 
   // Separate watched from watchlist - explicitly only show watched or undefined (local manual adds)
+  // For TV shows: only include if 95%+ complete (to account for skippable recap episodes)
   const watchlistMovies = uniqueItems.filter(m => m.list === "watchlist");
-  const libraryMovies = uniqueItems.filter(m => m.list === "watched" || m.list === undefined || m.list === null);
+  const libraryMovies = uniqueItems.filter(m => {
+    // Must be watched or undefined (local manual adds)
+    if (m.list !== "watched" && m.list !== undefined && m.list !== null) return false;
+
+    // For TV shows, require 95%+ completion
+    if (m.type === "series") {
+      const watched = m.watchedEpisodes || 0;
+      const total = m.totalEpisodes || 0;
+      if (total > 0) {
+        const completionPercent = (watched / total) * 100;
+        return completionPercent >= 95;
+      }
+      // If no episode data, include it (assume complete)
+      return true;
+    }
+
+    // Movies are always included
+    return true;
+  });
 
   // Filter Logic
   let displayedMovies = libraryMovies;
