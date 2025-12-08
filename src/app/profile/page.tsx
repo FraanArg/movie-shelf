@@ -22,11 +22,18 @@ export default async function ProfilePage() {
         }
     }
 
-    // 1. Read from Local DB
-    let items = await getDB();
+    // 1. Read from Local DB with defensive error handling
+    let items: any[] = [];
+    try {
+        items = await getDB() || [];
+    } catch (e) {
+        console.error("Failed to read DB:", e);
+        items = [];
+    }
 
-    // Deduplicate
-    const uniqueItems = Array.from(new Map(items.map(m => [m.imdbId || m.id, m])).values());
+    // Deduplicate with null checks
+    const uniqueItems = Array.from(new Map(items.filter(m => m).map(m => [m.imdbId || m.id, m])).values());
+
 
     // Calculate Stats
     const totalMovies = uniqueItems.filter(i => i.type === "movie").length;
