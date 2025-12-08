@@ -131,12 +131,13 @@ export async function getMovieInfoForSync(imdbId: string): Promise<{
     }
 
     // If still no directors, try executive producers for TV
-    if (!directors && details.credits?.crew?.length > 0) {
-        directors = details.credits.crew
+    if (!directors && details.credits?.crew && details.credits.crew.length > 0) {
+        const fallbackDirectors = details.credits.crew
             .filter(c => c.job === "Executive Producer" || c.department === "Directing")
             .slice(0, 2)
             .map(c => c.name)
-            .join(", ") || "N/A";
+            .join(", ");
+        if (fallbackDirectors) directors = fallbackDirectors;
     }
 
     if (!directors) directors = "N/A";
