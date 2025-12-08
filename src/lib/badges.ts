@@ -1,6 +1,7 @@
 import { MovieItem } from "@/lib/db";
 
-export interface Badge {
+// Internal badge with check function (server-side only)
+interface BadgeDefinition {
     id: string;
     name: string;
     emoji: string;
@@ -10,7 +11,18 @@ export interface Badge {
     color: string;
 }
 
-export const BADGES: Badge[] = [
+// Client-safe badge without check function
+export interface Badge {
+    id: string;
+    name: string;
+    emoji: string;
+    description: string;
+    requirement: string;
+    color: string;
+    earned?: boolean;
+}
+
+const BADGE_DEFINITIONS: BadgeDefinition[] = [
     // Collection Size Badges
     {
         id: "film-buff",
@@ -147,10 +159,30 @@ export const BADGES: Badge[] = [
     },
 ];
 
+// Convert BadgeDefinition to client-safe Badge (strips the check function)
+function toClientBadge(def: BadgeDefinition, earned: boolean = false): Badge {
+    return {
+        id: def.id,
+        name: def.name,
+        emoji: def.emoji,
+        description: def.description,
+        requirement: def.requirement,
+        color: def.color,
+        earned,
+    };
+}
+
 export function getEarnedBadges(items: MovieItem[], genreCounts: Record<string, number>): Badge[] {
-    return BADGES.filter(badge => badge.check(items, genreCounts));
+    return BADGE_DEFINITIONS
+        .filter(badge => badge.check(items, genreCounts))
+        .map(badge => toClientBadge(badge, true));
 }
 
 export function getAllBadges(): Badge[] {
-    return BADGES;
+    return BADGE_DEFINITIONS.map(badge => toClientBadge(badge, false));
+}
+
+// Get all badges with earned status
+export function getBadgesWithStatus(items: MovieItem[], genreCounts: Record<string, number>): Badge[] {
+    return BADGE_DEFINITIONS.map(badge => toClientBadge(badge, badge.check(items, genreCounts)));
 }
