@@ -7,6 +7,7 @@ import GenreRadarChart from "@/components/GenreRadarChart";
 import AffinityStats from "@/components/AffinityStats";
 import BadgeGrid from "@/components/BadgeGrid";
 import ViewingHeatmap from "@/components/ViewingHeatmap";
+import ReEnrichButton from "@/components/ReEnrichButton";
 import { getEarnedBadges, getAllBadges } from "@/lib/badges";
 
 export default async function ProfilePage() {
@@ -182,6 +183,9 @@ export default async function ProfilePage() {
                     📅 Year in Review
                 </Link>
             </div>
+
+            {/* Fix Missing Data */}
+            <ReEnrichButton />
 
             {/* Viewing Activity Heatmap */}
             <ViewingHeatmap watchDates={watchedItems.filter(m => m.date).map(m => m.date)} />

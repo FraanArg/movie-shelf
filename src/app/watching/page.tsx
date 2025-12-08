@@ -133,120 +133,129 @@ function ShowProgressCard({
 }) {
     const episodesLeft = progress.aired - progress.completed;
     const hoursLeft = Math.round(episodesLeft * 0.75); // ~45min per episode
+    const hasDetailLink = !!show.ids?.imdb;
 
-    return (
-        <Link
-            href={`/movie/${show.ids?.imdb}`}
-            style={{ textDecoration: "none", color: "inherit" }}
+    const CardContent = (
+        <div style={{
+            display: "flex",
+            gap: "20px",
+            padding: "20px",
+            background: "var(--glass-bg)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            borderRadius: "16px",
+            border: "1px solid var(--glass-border)",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+            cursor: hasDetailLink ? "pointer" : "default",
+        }}
+            className={hasDetailLink ? "hover-lift" : ""}
         >
+            {/* Poster */}
             <div style={{
-                display: "flex",
-                gap: "20px",
-                padding: "20px",
-                background: "var(--glass-bg)",
-                backdropFilter: "blur(20px)",
-                WebkitBackdropFilter: "blur(20px)",
-                borderRadius: "16px",
-                border: "1px solid var(--glass-border)",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                cursor: "pointer",
-            }}
-                className="hover-lift"
-            >
-                {/* Poster */}
-                <div style={{
-                    width: "100px",
-                    height: "150px",
-                    borderRadius: "10px",
-                    overflow: "hidden",
-                    flexShrink: 0,
-                    position: "relative",
-                }}>
-                    {posterUrl ? (
-                        <Image
-                            src={posterUrl}
-                            alt={show.title}
-                            fill
-                            style={{ objectFit: "cover" }}
-                            sizes="100px"
-                        />
-                    ) : (
-                        <div style={{
-                            width: "100%",
-                            height: "100%",
-                            background: "rgba(255,255,255,0.1)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "2rem",
-                        }}>
-                            📺
-                        </div>
-                    )}
-                </div>
-
-                {/* Info */}
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                    <div>
-                        <h3 style={{ fontSize: "1.1rem", fontWeight: "600", marginBottom: "5px" }}>
-                            {show.title}
-                        </h3>
-                        <p style={{ fontSize: "0.85rem", opacity: 0.6, marginBottom: "10px" }}>
-                            {show.year}
-                        </p>
+                width: "100px",
+                height: "150px",
+                borderRadius: "10px",
+                overflow: "hidden",
+                flexShrink: 0,
+                position: "relative",
+            }}>
+                {posterUrl ? (
+                    <Image
+                        src={posterUrl}
+                        alt={show.title}
+                        fill
+                        style={{ objectFit: "cover" }}
+                        sizes="100px"
+                    />
+                ) : (
+                    <div style={{
+                        width: "100%",
+                        height: "100%",
+                        background: "rgba(255,255,255,0.1)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "2rem",
+                    }}>
+                        📺
                     </div>
-
-                    {/* Progress bar */}
-                    <div>
-                        <div style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            marginBottom: "6px",
-                            fontSize: "0.8rem",
-                        }}>
-                            <span style={{ opacity: 0.7 }}>
-                                {progress.completed} / {progress.aired} episodes
-                            </span>
-                            <span style={{ color: "var(--accent)", fontWeight: "600" }}>
-                                {progress.percent.toFixed(0)}%
-                            </span>
-                        </div>
-                        <div style={{
-                            height: "6px",
-                            background: "rgba(255,255,255,0.1)",
-                            borderRadius: "3px",
-                            overflow: "hidden",
-                        }}>
-                            <div style={{
-                                width: `${progress.percent}%`,
-                                height: "100%",
-                                background: "linear-gradient(90deg, var(--accent), #30d158)",
-                                borderRadius: "3px",
-                                transition: "width 0.3s ease",
-                            }} />
-                        </div>
-                    </div>
-
-                    {/* Time remaining */}
-                    {episodesLeft > 0 && (
-                        <div style={{
-                            marginTop: "10px",
-                            padding: "8px 12px",
-                            background: "rgba(255,255,255,0.05)",
-                            borderRadius: "8px",
-                            fontSize: "0.8rem",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                        }}>
-                            <span>⏱️</span>
-                            <span style={{ opacity: 0.8 }}>
-                                {episodesLeft} episodes left • ~{hoursLeft}h to finish
-                            </span>
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
-        </Link>
+
+            {/* Info */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                    <h3 style={{ fontSize: "1.1rem", fontWeight: "600", marginBottom: "5px" }}>
+                        {show.title}
+                    </h3>
+                    <p style={{ fontSize: "0.85rem", opacity: 0.6, marginBottom: "10px" }}>
+                        {show.year}
+                    </p>
+                </div>
+
+                {/* Progress bar */}
+                <div>
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "6px",
+                        fontSize: "0.8rem",
+                    }}>
+                        <span style={{ opacity: 0.7 }}>
+                            {progress.completed} / {progress.aired} episodes
+                        </span>
+                        <span style={{ color: "var(--accent)", fontWeight: "600" }}>
+                            {progress.percent.toFixed(0)}%
+                        </span>
+                    </div>
+                    <div style={{
+                        height: "6px",
+                        background: "rgba(255,255,255,0.1)",
+                        borderRadius: "3px",
+                        overflow: "hidden",
+                    }}>
+                        <div style={{
+                            width: `${progress.percent}%`,
+                            height: "100%",
+                            background: "linear-gradient(90deg, var(--accent), #30d158)",
+                            borderRadius: "3px",
+                            transition: "width 0.3s ease",
+                        }} />
+                    </div>
+                </div>
+
+                {/* Time remaining */}
+                {episodesLeft > 0 && (
+                    <div style={{
+                        marginTop: "10px",
+                        padding: "8px 12px",
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: "8px",
+                        fontSize: "0.8rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                    }}>
+                        <span>⏱️</span>
+                        <span style={{ opacity: 0.8 }}>
+                            {episodesLeft} episodes left • ~{hoursLeft}h to finish
+                        </span>
+                    </div>
+                )}
+            </div>
+        </div>
     );
+
+    if (hasDetailLink) {
+        return (
+            <Link
+                href={`/movie/${show.ids?.imdb}`}
+                style={{ textDecoration: "none", color: "inherit" }}
+            >
+                {CardContent}
+            </Link>
+        );
+    }
+
+    return CardContent;
 }
