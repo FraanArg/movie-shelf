@@ -61,18 +61,29 @@ export async function POST() {
         const processedIds = new Set();
         const newItems: any[] = [];
 
+        // Build a set of existing identifiers (both IMDB and Trakt IDs)
+        const existingTraktIds = new Set(existingItems.map(m => m.id).filter(Boolean));
+
         for (const item of allHistory) {
             if (item.type === "movie") {
+                const traktId = item.movie.ids.trakt;
                 const imdbId = item.movie.ids.imdb;
-                if (processedIds.has(item.movie.ids.trakt)) continue;
-                if (existingImdbIds.has(imdbId)) continue; // Already in DB
-                processedIds.add(item.movie.ids.trakt);
+
+                if (processedIds.has(traktId)) continue;
+                // Check both IMDB and Trakt ID for existing
+                if (imdbId && existingImdbIds.has(imdbId)) continue;
+                if (existingTraktIds.has(traktId)) continue;
+
+                processedIds.add(traktId);
                 newItems.push({ type: "movie", data: item.movie, date: item.watched_at, list: "watched" });
             } else if (item.type === "episode") {
                 const showId = item.show.ids.trakt;
                 const imdbId = item.show.ids.imdb;
+
                 if (processedIds.has(showId)) continue;
-                if (existingImdbIds.has(imdbId)) continue; // Already in DB
+                if (imdbId && existingImdbIds.has(imdbId)) continue;
+                if (existingTraktIds.has(showId)) continue;
+
                 processedIds.add(showId);
                 newItems.push({ type: "series", data: item.show, date: item.watched_at, list: "watched" });
             }
