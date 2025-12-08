@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import { getDB, saveDB, MovieItem } from "@/lib/db";
 import { getMovieInfoForSync } from "@/lib/tmdb";
 
-// Re-enrich items that have missing Director/Actor data
-const BATCH_SIZE = 50;
+// Smaller batch to avoid Vercel timeout (10 seconds limit)
+const BATCH_SIZE = 10;
 
 export async function POST() {
     const cookieStore = await cookies();
@@ -23,8 +23,6 @@ export async function POST() {
             (!item.Director || item.Director === "N/A" || !item.Actors || item.Actors === "N/A")
         );
 
-        console.log(`Found ${needsEnrichment.length} items needing enrichment`);
-
         if (needsEnrichment.length === 0) {
             return NextResponse.json({
                 success: true,
@@ -34,36 +32,46 @@ export async function POST() {
             });
         }
 
-        // Process a batch
+        // Process a small batch sequentially to avoid timeout
         const batch = needsEnrichment.slice(0, BATCH_SIZE);
         const remaining = needsEnrichment.length - batch.length;
 
+        // Create map of updates
+        const updates: Map<string, any> = new Map();
         let enrichedCount = 0;
-        const updatedItems = await Promise.all(items.map(async (item) => {
-            // Only enrich items in our batch
-            const needsUpdate = batch.some(b => b.imdbId === item.imdbId);
-            if (!needsUpdate || !item.imdbId) return item;
+
+        // Process SEQUENTIALLY (one at a time) to avoid rate limits/timeouts
+        for (const item of batch) {
+            if (!item.imdbId) continue;
 
             try {
                 const tmdbData = await getMovieInfoForSync(item.imdbId);
-                if (tmdbData) {
+                if (tmdbData && (tmdbData.director !== "N/A" || tmdbData.actors !== "N/A")) {
                     enrichedCount++;
-                    return {
-                        ...item,
-                        Director: tmdbData.director || item.Director,
-                        Actors: tmdbData.actors || item.Actors,
+                    updates.set(item.imdbId, {
+                        Director: tmdbData.director || "N/A",
+                        Actors: tmdbData.actors || "N/A",
                         Genre: tmdbData.genres || item.Genre,
                         Plot: tmdbData.plot || item.Plot,
                         Runtime: tmdbData.runtime || item.Runtime,
                         posterUrl: tmdbData.posterUrl || item.posterUrl,
                         tmdbRating: tmdbData.tmdbRating || item.tmdbRating,
-                    };
+                    });
                 }
             } catch (e) {
                 console.error(`Failed to enrich ${item.title}:`, e);
+                // Continue with next item
+            }
+        }
+
+        // Apply updates to items
+        const updatedItems = items.map(item => {
+            const update = item.imdbId ? updates.get(item.imdbId) : null;
+            if (update) {
+                return { ...item, ...update };
             }
             return item;
-        }));
+        });
 
         await saveDB(updatedItems as MovieItem[]);
 
@@ -71,8 +79,9 @@ export async function POST() {
             success: true,
             enriched: enrichedCount,
             remaining: remaining,
+            totalNeedingEnrichment: needsEnrichment.length,
             message: remaining > 0
-                ? `Enriched ${enrichedCount} items. Click again (${remaining} more need enrichment)`
+                ? `Enriched ${enrichedCount} items. ${remaining} more to go.`
                 : `All done! Enriched ${enrichedCount} items.`,
         });
 
@@ -99,11 +108,7 @@ export async function GET() {
             totalNeedingEnrichment: needsEnrichment.length,
             moviesMissing: moviesMissing.length,
             showsMissing: showsMissing.length,
-            sampleTitles: needsEnrichment.slice(0, 15).map(i => ({
-                title: i.title,
-                type: i.type,
-                director: i.Director,
-            })),
+            sampleTitles: needsEnrichment.slice(0, 5).map(i => i.title),
         });
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
