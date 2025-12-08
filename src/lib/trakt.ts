@@ -153,3 +153,112 @@ export const getWatchlist = async (accessToken: string, clientId: string) => {
 
     return response.json();
 };
+
+// Get all watched shows with progress data
+export const getWatchedShows = async (accessToken: string, clientId: string) => {
+    const response = await fetch(`${TRAKT_API_URL}/sync/watched/shows?extended=noseasons`, {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+            "trakt-api-version": "2",
+            "trakt-api-key": clientId,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch watched shows");
+    }
+
+    return response.json();
+};
+
+// Get detailed progress for a specific show
+export interface ShowProgress {
+    aired: number;
+    completed: number;
+    last_watched_at: string;
+    seasons: Array<{
+        number: number;
+        aired: number;
+        completed: number;
+        episodes: Array<{
+            number: number;
+            completed: boolean;
+        }>;
+    }>;
+}
+
+export const getShowProgress = async (
+    accessToken: string,
+    clientId: string,
+    traktId: number | string
+): Promise<ShowProgress | null> => {
+    try {
+        const response = await fetch(`${TRAKT_API_URL}/shows/${traktId}/progress/watched?hidden=false&specials=false`, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+                "trakt-api-version": "2",
+                "trakt-api-key": clientId,
+            },
+        });
+
+        if (!response.ok) {
+            console.error(`Failed to fetch progress for show ${traktId}: ${response.status}`);
+            return null;
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error(`Error fetching show progress for ${traktId}:`, error);
+        return null;
+    }
+};
+
+// Get shows that are currently being watched (started but not completed)
+export const getShowsInProgress = async (accessToken: string, clientId: string) => {
+    try {
+        // First get all watched shows
+        const watchedShows = await getWatchedShows(accessToken, clientId);
+
+        // For each show, check if it's in progress (completed < aired)
+        const inProgressShows: Array<{
+            show: TraktShow;
+            progress: { aired: number; completed: number; percent: number };
+        }> = [];
+
+        // Limit to avoid too many API calls - check first 50 shows
+        const showsToCheck = watchedShows.slice(0, 50);
+
+        for (const item of showsToCheck) {
+            const show = item.show;
+            if (!show?.ids?.trakt) continue;
+
+            const progress = await getShowProgress(accessToken, clientId, show.ids.trakt);
+            if (!progress) continue;
+
+            // Calculate completion percentage
+            const percent = progress.aired > 0 ? (progress.completed / progress.aired) * 100 : 0;
+
+            // Include if started but not complete (1-94%)
+            if (progress.completed > 0 && percent < 95) {
+                inProgressShows.push({
+                    show,
+                    progress: {
+                        aired: progress.aired,
+                        completed: progress.completed,
+                        percent,
+                    },
+                });
+            }
+
+            // Add small delay to respect rate limits
+            await new Promise(r => setTimeout(r, 100));
+        }
+
+        return inProgressShows;
+    } catch (error) {
+        console.error("Error fetching shows in progress:", error);
+        return [];
+    }
+};

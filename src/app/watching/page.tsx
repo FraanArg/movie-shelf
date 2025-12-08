@@ -1,44 +1,54 @@
 import Link from "next/link";
 import Image from "next/image";
+import { cookies } from "next/headers";
+import { getShowsInProgress, TraktShow } from "@/lib/trakt";
 import { getDB, MovieItem } from "@/lib/db";
 
+interface ShowWithProgress {
+    show: TraktShow;
+    progress: { aired: number; completed: number; percent: number };
+    posterUrl?: string;
+}
+
 export default async function WatchingPage() {
-    // Get all items from DB
-    let items: MovieItem[] = [];
-    try {
-        items = await getDB() || [];
-    } catch (e) {
-        console.error("Failed to read DB:", e);
-    }
+    const cookieStore = await cookies();
+    const token = cookieStore.get("trakt_access_token")?.value;
+    const clientId = process.env.NEXT_PUBLIC_TRAKT_CLIENT_ID;
 
-    // Filter for TV shows that are currently being watched
-    // Include: shows marked "watching", OR series that are NOT confirmed 95%+ complete
-    const watchingShows = items.filter(item => {
-        if (item.type !== "series") return false;
+    let watchingShows: ShowWithProgress[] = [];
+    let errorMessage = "";
 
-        // Explicitly marked as watching - always include
-        if (item.list === "watching") return true;
+    // Try to fetch from Trakt API first
+    if (token && clientId) {
+        try {
+            const inProgress = await getShowsInProgress(token, clientId);
 
-        // Skip watchlist items - those go to the Watchlist page
-        if (item.list === "watchlist") return false;
+            // Get poster URLs from our DB
+            let dbItems: MovieItem[] = [];
+            try {
+                dbItems = await getDB() || [];
+            } catch (e) {
+                console.error("Failed to read DB:", e);
+            }
 
-        // If we have episode progress data
-        if (item.totalEpisodes && item.totalEpisodes > 0) {
-            const watched = item.watchedEpisodes || 0;
-            const completionPercent = (watched / item.totalEpisodes) * 100;
-            // Include if started but not 95% complete
-            return watched > 0 && completionPercent < 95;
+            // Map to our format with poster URLs
+            watchingShows = inProgress.map(item => {
+                const dbMatch = dbItems.find(
+                    db => db.imdbId === item.show.ids?.imdb ||
+                        db.title?.toLowerCase() === item.show.title?.toLowerCase()
+                );
+                return {
+                    ...item,
+                    posterUrl: dbMatch?.posterUrl || undefined,
+                };
+            });
+        } catch (e) {
+            console.error("Failed to fetch shows in progress:", e);
+            errorMessage = "Could not load progress data from Trakt";
         }
-
-        // For series without episode data that are marked "watched":
-        // We can't verify completion, so DON'T show them here
-        // (they'll appear in Library which assumes complete)
-        // Exception: if they have list undefined (not synced), skip
-        return false;
-    });
-
-    // Sort by last watched date (most recent first)
-    watchingShows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } else {
+        errorMessage = "Connect to Trakt to see your shows in progress";
+    }
 
     const emptyState = watchingShows.length === 0;
 
@@ -80,12 +90,14 @@ export default async function WatchingPage() {
                 }}>
                     <div style={{ fontSize: "4rem", marginBottom: "20px" }}>📺</div>
                     <h2 style={{ fontSize: "1.5rem", fontWeight: "500", marginBottom: "10px" }}>
-                        No shows in progress
+                        {errorMessage || "No shows in progress"}
                     </h2>
                     <p style={{ fontSize: "1rem" }}>
-                        TV shows youre currently watching will appear here.
-                        <br />
-                        Track your progress through each season!
+                        {!token ? (
+                            <>Connect to Trakt from the home page to see your progress.</>
+                        ) : (
+                            <>Shows you&apos;ve started but not finished will appear here.</>
+                        )}
                     </p>
                 </div>
             ) : (
@@ -95,8 +107,13 @@ export default async function WatchingPage() {
                         gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
                         gap: "20px",
                     }}>
-                        {watchingShows.map((show) => (
-                            <ShowProgressCard key={show.imdbId || show.id} show={show} />
+                        {watchingShows.map((item) => (
+                            <ShowProgressCard
+                                key={item.show.ids?.imdb || item.show.title}
+                                show={item.show}
+                                progress={item.progress}
+                                posterUrl={item.posterUrl}
+                            />
                         ))}
                     </div>
                 </div>
@@ -105,21 +122,21 @@ export default async function WatchingPage() {
     );
 }
 
-function ShowProgressCard({ show }: { show: MovieItem }) {
-    const watchedEpisodes = show.watchedEpisodes || 0;
-    const totalEpisodes = show.totalEpisodes || 0;
-    const progressPercent = totalEpisodes > 0 ? (watchedEpisodes / totalEpisodes) * 100 : 0;
-
-    // Estimate time remaining (assume ~45min per episode)
-    const episodesLeft = totalEpisodes - watchedEpisodes;
-    const hoursLeft = Math.round(episodesLeft * 0.75);
-
-    const currentSeason = show.currentSeason || 1;
-    const totalSeasons = show.totalSeasons || 1;
+function ShowProgressCard({
+    show,
+    progress,
+    posterUrl
+}: {
+    show: TraktShow;
+    progress: { aired: number; completed: number; percent: number };
+    posterUrl?: string;
+}) {
+    const episodesLeft = progress.aired - progress.completed;
+    const hoursLeft = Math.round(episodesLeft * 0.75); // ~45min per episode
 
     return (
         <Link
-            href={`/movie/${show.imdbId}`}
+            href={`/movie/${show.ids?.imdb}`}
             style={{ textDecoration: "none", color: "inherit" }}
         >
             <div style={{
@@ -145,9 +162,9 @@ function ShowProgressCard({ show }: { show: MovieItem }) {
                     flexShrink: 0,
                     position: "relative",
                 }}>
-                    {show.posterUrl ? (
+                    {posterUrl ? (
                         <Image
-                            src={show.posterUrl}
+                            src={posterUrl}
                             alt={show.title}
                             fill
                             style={{ objectFit: "cover" }}
@@ -175,7 +192,7 @@ function ShowProgressCard({ show }: { show: MovieItem }) {
                             {show.title}
                         </h3>
                         <p style={{ fontSize: "0.85rem", opacity: 0.6, marginBottom: "10px" }}>
-                            Season {currentSeason} of {totalSeasons}
+                            {show.year}
                         </p>
                     </div>
 
@@ -188,10 +205,10 @@ function ShowProgressCard({ show }: { show: MovieItem }) {
                             fontSize: "0.8rem",
                         }}>
                             <span style={{ opacity: 0.7 }}>
-                                {watchedEpisodes} / {totalEpisodes} episodes
+                                {progress.completed} / {progress.aired} episodes
                             </span>
                             <span style={{ color: "var(--accent)", fontWeight: "600" }}>
-                                {progressPercent.toFixed(0)}%
+                                {progress.percent.toFixed(0)}%
                             </span>
                         </div>
                         <div style={{
@@ -201,7 +218,7 @@ function ShowProgressCard({ show }: { show: MovieItem }) {
                             overflow: "hidden",
                         }}>
                             <div style={{
-                                width: `${progressPercent}%`,
+                                width: `${progress.percent}%`,
                                 height: "100%",
                                 background: "linear-gradient(90deg, var(--accent), #30d158)",
                                 borderRadius: "3px",
