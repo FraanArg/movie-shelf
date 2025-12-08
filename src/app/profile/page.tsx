@@ -140,6 +140,47 @@ export default async function ProfilePage() {
                 <StatCard label="Total Items" value={uniqueItems.length} />
             </div>
 
+            {/* Quick Links */}
+            <div style={{
+                display: "flex",
+                gap: "15px",
+                marginBottom: "30px",
+                flexWrap: "wrap",
+            }}>
+                <Link href="/completionist" style={{
+                    padding: "12px 20px",
+                    background: "var(--glass-bg)",
+                    backdropFilter: "blur(20px)",
+                    WebkitBackdropFilter: "blur(20px)",
+                    borderRadius: "12px",
+                    border: "1px solid var(--glass-border)",
+                    textDecoration: "none",
+                    color: "var(--foreground)",
+                    fontWeight: "500",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                }}>
+                    🎯 Completionist Tracker
+                </Link>
+                <Link href="/year-review" style={{
+                    padding: "12px 20px",
+                    background: "var(--glass-bg)",
+                    backdropFilter: "blur(20px)",
+                    WebkitBackdropFilter: "blur(20px)",
+                    borderRadius: "12px",
+                    border: "1px solid var(--glass-border)",
+                    textDecoration: "none",
+                    color: "var(--foreground)",
+                    fontWeight: "500",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                }}>
+                    📅 Year in Review
+                </Link>
+            </div>
+
             {/* Viewing Activity Heatmap */}
             <ViewingHeatmap watchDates={uniqueItems.filter(m => m.date).map(m => m.date)} />
 
