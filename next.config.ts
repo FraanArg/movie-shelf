@@ -5,6 +5,9 @@ const withPWA = require("next-pwa")({
   disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true,
+  fallbacks: {
+    document: "/offline", // Offline fallback page
+  },
   runtimeCaching: [
     // Cache OMDB poster images
     {
@@ -30,7 +33,20 @@ const withPWA = require("next-pwa")({
         },
       },
     },
-    // Cache API responses with network-first strategy
+    // Cache library API responses for offline access
+    {
+      urlPattern: /\/api\/(export|notes|random)\/?$/i,
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "library-api-cache",
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        },
+        networkTimeoutSeconds: 5,
+      },
+    },
+    // Cache other API responses with network-first strategy
     {
       urlPattern: /^https?:\/\/.*\/api\/.*/i,
       handler: "NetworkFirst",
@@ -43,14 +59,38 @@ const withPWA = require("next-pwa")({
         networkTimeoutSeconds: 10,
       },
     },
-    // Cache pages with stale-while-revalidate
+    // Cache all main pages with stale-while-revalidate for faster loading
     {
-      urlPattern: /^https?:\/\/.*\/(profile|wall|blindspots|connections)$/i,
+      urlPattern: /^\/?$/i, // Home page
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "home-cache",
+        expiration: {
+          maxEntries: 1,
+          maxAgeSeconds: 60 * 60 * 24, // 24 hours
+        },
+      },
+    },
+    // Cache feature pages
+    {
+      urlPattern: /^https?:\/\/.*\/(profile|wall|blindspots|connections|watchlist|watching|year-review|search)$/i,
       handler: "StaleWhileRevalidate",
       options: {
         cacheName: "pages-cache",
         expiration: {
           maxEntries: 50,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        },
+      },
+    },
+    // Cache movie detail pages
+    {
+      urlPattern: /^https?:\/\/.*\/movie\/[^/]+$/i,
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "movie-pages-cache",
+        expiration: {
+          maxEntries: 200,
           maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
         },
       },
@@ -64,6 +104,18 @@ const withPWA = require("next-pwa")({
         expiration: {
           maxEntries: 100,
           maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+        },
+      },
+    },
+    // Cache fonts from Google
+    {
+      urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "google-fonts",
+        expiration: {
+          maxEntries: 30,
+          maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
         },
       },
     },
