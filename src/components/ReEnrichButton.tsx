@@ -78,8 +78,10 @@ export default function ReEnrichButton() {
 
     const needsEnrichment = status?.totalNeedingEnrichment ?? 0;
     const remaining = status?.remaining ?? needsEnrichment;
+
+    // Calculate progress based on total processed vs initial amount
     const progressPercent = initialTotal > 0
-        ? Math.round(((initialTotal - remaining) / initialTotal) * 100)
+        ? Math.min(99, Math.round((totalProcessed / initialTotal) * 100))
         : 0;
 
     // Nothing to fix
