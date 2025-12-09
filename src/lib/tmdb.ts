@@ -99,6 +99,45 @@ export async function getMovieDetails(imdbId: string): Promise<TMDbMovieDetails 
     }
 }
 
+// Known extended edition runtimes (in minutes)
+// These are hardcoded because TMDb only has theatrical runtimes
+const EXTENDED_EDITION_RUNTIMES: Record<string, number> = {
+    // Lord of the Rings Extended Editions
+    "the lord of the rings: the fellowship of the ring": 228,
+    "the lord of the rings: the two towers": 235,
+    "the lord of the rings: the return of the king": 263,
+    // The Hobbit Extended Editions
+    "the hobbit: an unexpected journey": 182,
+    "the hobbit: the desolation of smaug": 186,
+    "the hobbit: the battle of the five armies": 164,
+    // Other notable extended editions
+    "avatar": 178, // Extended Collector's Edition
+    "aliens": 154, // Special Edition
+    "the abyss": 171, // Special Edition
+    "kingdom of heaven": 194, // Director's Cut
+    "watchmen": 215, // Ultimate Cut
+    "batman v superman: dawn of justice": 183, // Ultimate Edition
+    "justice league": 242, // Zack Snyder's Justice League
+    "apocalypse now": 202, // Redux
+    "blade runner": 117, // Final Cut
+    "the godfather part iii": 170, // Coda: The Death of Michael Corleone
+    "amadeus": 180, // Director's Cut
+    "das boot": 293, // Director's Cut
+    "dune": 190, // Extended TV Version (1984)
+};
+
+/**
+ * Get the known extended edition runtime for a title, or null if not in our lookup
+ */
+function getKnownExtendedRuntime(title: string): number | null {
+    const normalizedTitle = title
+        .toLowerCase()
+        .replace(/\s*\(extended\)|\s*\(extended edition\)|\s*\(director's cut\)|\s*\(special edition\)|\s*\(ultimate edition\)|\s*\(final cut\)|\s*\(redux\)/gi, "")
+        .trim();
+
+    return EXTENDED_EDITION_RUNTIMES[normalizedTitle] || null;
+}
+
 /**
  * Search for a movie by title and year, returns IMDB ID and basic info
  * Useful for movies that don't have an IMDB ID in Trakt (like extended editions)
@@ -113,9 +152,12 @@ export async function searchMovieByTitle(title: string, year?: string): Promise<
     if (!apiKey) return null;
 
     try {
+        // Check if we have a known extended edition runtime
+        const knownRuntime = getKnownExtendedRuntime(title);
+
         // Clean up title - remove "(Extended)", "(Director's Cut)", etc. for better search
         const cleanTitle = title
-            .replace(/\s*\(Extended\)|\s*\(Extended Edition\)|\s*\(Director's Cut\)|\s*\(Special Edition\)/gi, "")
+            .replace(/\s*\(Extended\)|\s*\(Extended Edition\)|\s*\(Director's Cut\)|\s*\(Special Edition\)|\s*\(Ultimate Edition\)|\s*\(Final Cut\)|\s*\(Redux\)/gi, "")
             .trim();
 
         const yearParam = year ? `&year=${year}` : "";
@@ -141,11 +183,12 @@ export async function searchMovieByTitle(title: string, year?: string): Promise<
 
         const details = await detailsResponse.json();
 
-        // For extended editions, try to estimate longer runtime
-        // Extended editions are typically 15-30% longer than theatrical
+        // Use known extended runtime if available, otherwise estimate
         let runtime = details.runtime;
-        if (title.toLowerCase().includes("extended") && runtime) {
-            // Assume extended is ~20% longer than theatrical
+        if (knownRuntime) {
+            runtime = knownRuntime;
+        } else if (title.toLowerCase().includes("extended") && runtime) {
+            // Fallback: assume extended is ~20% longer than theatrical
             runtime = Math.round(runtime * 1.2);
         }
 
