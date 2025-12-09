@@ -17,45 +17,46 @@ export async function POST() {
     try {
         const items = await getDB();
 
-        // Find items missing Director data (what Stats page uses)
+        // Find items that need enrichment AND haven't been attempted yet
         const needsEnrichment = items.filter(item =>
-            item.imdbId && // Has IMDB ID so we can look it up
-            (!item.Director || item.Director === "N/A")
+            item.imdbId &&
+            (!item.Director || item.Director === "N/A") &&
+            !item.enrichAttempted // Skip items we've already tried
         );
 
         if (needsEnrichment.length === 0) {
+            // Check if there are items with N/A that were attempted
+            const attemptedButFailed = items.filter(item =>
+                item.imdbId &&
+                (!item.Director || item.Director === "N/A") &&
+                item.enrichAttempted
+            );
+
             return NextResponse.json({
                 success: true,
-                message: "All items already have Director/Actor data!",
+                message: attemptedButFailed.length > 0
+                    ? `Done! ${attemptedButFailed.length} items couldn't be found on TMDb.`
+                    : "All items have Director data!",
                 enriched: 0,
                 remaining: 0,
+                unfixable: attemptedButFailed.length,
             });
         }
 
-        // Process a small batch sequentially to avoid timeout
+        // Process a small batch sequentially
         const batch = needsEnrichment.slice(0, BATCH_SIZE);
         const remaining = needsEnrichment.length - batch.length;
 
-        // Create map of updates
         const updates: Map<string, any> = new Map();
         let enrichedCount = 0;
-        const debugInfo: any[] = [];
+        let attemptedCount = 0;
 
-        // Process SEQUENTIALLY (one at a time) to avoid rate limits/timeouts
         for (const item of batch) {
             if (!item.imdbId) continue;
+            attemptedCount++;
 
             try {
-                console.log(`Enriching: ${item.title} (${item.imdbId})`);
                 const tmdbData = await getMovieInfoForSync(item.imdbId);
-
-                debugInfo.push({
-                    title: item.title,
-                    imdbId: item.imdbId,
-                    gotData: !!tmdbData,
-                    director: tmdbData?.director,
-                    actors: tmdbData?.actors?.slice(0, 50),
-                });
 
                 if (tmdbData && tmdbData.director && tmdbData.director !== "N/A") {
                     enrichedCount++;
@@ -67,19 +68,24 @@ export async function POST() {
                         Runtime: tmdbData.runtime || item.Runtime,
                         posterUrl: tmdbData.posterUrl || item.posterUrl,
                         tmdbRating: tmdbData.tmdbRating || item.tmdbRating,
+                        enrichAttempted: true, // Mark as successfully enriched
+                    });
+                } else {
+                    // TMDb couldn't find director - mark as attempted so we skip next time
+                    updates.set(item.imdbId, {
+                        enrichAttempted: true,
                     });
                 }
             } catch (e: any) {
                 console.error(`Failed to enrich ${item.title}:`, e);
-                debugInfo.push({
-                    title: item.title,
-                    imdbId: item.imdbId,
-                    error: e.message,
+                // Mark as attempted even on error
+                updates.set(item.imdbId, {
+                    enrichAttempted: true,
                 });
             }
         }
 
-        // Apply updates to items
+        // Apply updates
         if (updates.size > 0) {
             const updatedItems = items.map(item => {
                 const update = item.imdbId ? updates.get(item.imdbId) : null;
@@ -94,17 +100,15 @@ export async function POST() {
         return NextResponse.json({
             success: true,
             enriched: enrichedCount,
+            attempted: attemptedCount,
             remaining: remaining,
             totalNeedingEnrichment: needsEnrichment.length,
-            debug: debugInfo,
-            message: remaining > 0
-                ? `Enriched ${enrichedCount} items. ${remaining} more to go.`
-                : `All done! Enriched ${enrichedCount} items.`,
+            message: `Enriched ${enrichedCount}/${attemptedCount} items. ${remaining} left to check.`,
         });
 
     } catch (e: any) {
         console.error("Re-enrich failed:", e);
-        return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 });
+        return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
 
@@ -113,27 +117,33 @@ export async function GET() {
     try {
         const items = await getDB();
 
+        // Not attempted yet
         const needsEnrichment = items.filter(item =>
             item.imdbId &&
-            (!item.Director || item.Director === "N/A")
+            (!item.Director || item.Director === "N/A") &&
+            !item.enrichAttempted
+        );
+
+        // Attempted but TMDb had no data
+        const attemptedButFailed = items.filter(item =>
+            item.imdbId &&
+            (!item.Director || item.Director === "N/A") &&
+            item.enrichAttempted
         );
 
         const moviesMissing = needsEnrichment.filter(i => i.type === "movie");
         const showsMissing = needsEnrichment.filter(i => i.type === "series");
 
-        // Get sample with IMDB IDs to debug
-        const sampleWithIds = needsEnrichment.slice(0, 10).map(i => ({
-            title: i.title,
-            type: i.type,
-            imdbId: i.imdbId,
-            director: i.Director,
-        }));
-
         return NextResponse.json({
             totalNeedingEnrichment: needsEnrichment.length,
             moviesMissing: moviesMissing.length,
             showsMissing: showsMissing.length,
-            sampleWithIds,
+            alreadyAttempted: attemptedButFailed.length,
+            sampleWithIds: needsEnrichment.slice(0, 5).map(i => ({
+                title: i.title,
+                type: i.type,
+                imdbId: i.imdbId,
+            })),
         });
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
