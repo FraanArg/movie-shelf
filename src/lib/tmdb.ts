@@ -110,6 +110,10 @@ export async function getMovieInfoForSync(imdbId: string): Promise<{
     actors: string;
     plot: string;
     tmdbRating: number;
+    country: string;
+    language: string;
+    production: string;
+    writer: string;
 } | null> {
     const details = await getMovieDetails(imdbId);
     if (!details) return null;
@@ -147,6 +151,30 @@ export async function getMovieInfoForSync(imdbId: string): Promise<{
         ?.map(c => c.name)
         ?.join(", ") || "N/A";
 
+    // Get writers (Screenplay, Writer, Story)
+    const writers = details.credits?.crew
+        ?.filter(c => c.job === "Screenplay" || c.job === "Writer" || c.job === "Story" || c.department === "Writing")
+        ?.slice(0, 3)
+        ?.map(c => c.name)
+        ?.join(", ") || "N/A";
+
+    // Get production companies
+    const production = details.production_companies
+        ?.slice(0, 2)
+        ?.map(c => c.name)
+        ?.join(", ") || "N/A";
+
+    // Get country and language from extended details
+    const country = (details as any).production_countries
+        ?.slice(0, 2)
+        ?.map((c: any) => c.name || c.iso_3166_1)
+        ?.join(", ") || "N/A";
+
+    const language = (details as any).spoken_languages
+        ?.slice(0, 2)
+        ?.map((l: any) => l.english_name || l.name || l.iso_639_1)
+        ?.join(", ") || "N/A";
+
     return {
         posterUrl: details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : null,
         genres: details.genres?.map(g => g.name)?.join(", ") || "N/A",
@@ -155,6 +183,10 @@ export async function getMovieInfoForSync(imdbId: string): Promise<{
         actors: actors,
         plot: details.overview || "N/A",
         tmdbRating: details.vote_average || 0,
+        country: country,
+        language: language,
+        production: production,
+        writer: writers,
     };
 }
 

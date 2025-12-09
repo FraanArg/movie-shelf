@@ -1,14 +1,27 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { getUserStats, getTraktUser } from "@/lib/trakt";
+import { getTraktUser } from "@/lib/trakt";
 import { getDB } from "@/lib/db";
-import ThemeToggle from "@/components/ThemeToggle";
 import GenreRadarChart from "@/components/GenreRadarChart";
 import AffinityStats from "@/components/AffinityStats";
 import BadgeGrid from "@/components/BadgeGrid";
 import ViewingHeatmap from "@/components/ViewingHeatmap";
 import ReEnrichButton from "@/components/ReEnrichButton";
 import { getEarnedBadges, getAllBadges } from "@/lib/badges";
+// New components
+import StatCardEnhanced from "@/components/StatCardEnhanced";
+import StreakStats from "@/components/StreakStats";
+import BestDayChart from "@/components/BestDayChart";
+import MonthlyTrendChart from "@/components/MonthlyTrendChart";
+import BadgeProgress from "@/components/BadgeProgress";
+import MilestoneTimeline from "@/components/MilestoneTimeline";
+import PeakHoursChart from "@/components/PeakHoursChart";
+import DidYouKnow from "@/components/DidYouKnow";
+import LanguagePieChart from "@/components/LanguagePieChart";
+import ShareableStatsCard from "@/components/ShareableStatsCard";
+import GenreTrendChart from "@/components/GenreTrendChart";
+import CountryMap from "@/components/CountryMap";
+import StudioStats from "@/components/StudioStats";
 
 export default async function ProfilePage() {
     const cookieStore = await cookies();
@@ -43,6 +56,42 @@ export default async function ProfilePage() {
     const totalMovies = watchedItems.filter(i => i.type === "movie").length;
     const totalShows = watchedItems.filter(i => i.type === "series").length;
 
+    // Average Rating
+    const ratings = watchedItems
+        .map(i => parseFloat(i.imdbRating || "0"))
+        .filter(r => r > 0);
+    const avgRating = ratings.length > 0
+        ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+        : "N/A";
+
+    // Total Runtime
+    let totalMinutes = 0;
+    watchedItems.forEach(item => {
+        if (item.Runtime && item.Runtime !== "N/A") {
+            const mins = parseInt(item.Runtime);
+            if (!isNaN(mins)) totalMinutes += mins;
+        }
+    });
+    const totalHours = Math.round(totalMinutes / 60);
+    const totalDays = (totalMinutes / 60 / 24).toFixed(1);
+
+    // Longest Movie
+    const moviesWithRuntime = watchedItems
+        .filter(i => i.type === "movie" && i.Runtime && i.Runtime !== "N/A")
+        .map(i => ({ ...i, runtimeMins: parseInt(i.Runtime) }))
+        .filter(i => !isNaN(i.runtimeMins))
+        .sort((a, b) => b.runtimeMins - a.runtimeMins);
+    const longestMovie = moviesWithRuntime[0];
+
+    // Average Release Year
+    const years = watchedItems
+        .map(i => parseInt(i.year))
+        .filter(y => !isNaN(y) && y > 1800);
+    const avgYear = years.length > 0
+        ? Math.round(years.reduce((a, b) => a + b, 0) / years.length)
+        : null;
+    const avgDecade = avgYear ? `${Math.floor(avgYear / 10) * 10}s` : null;
+
     // Decades distribution (watched only)
     const decades: Record<string, number> = {};
     watchedItems.forEach(item => {
@@ -74,6 +123,8 @@ export default async function ProfilePage() {
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 8);
+
+    const topGenre = genreData[0]?.name || "N/A";
 
     // Director aggregation (watched only - movies AND shows)
     const directorMap: Record<string, { count: number; titles: string[] }> = {};
@@ -121,6 +172,29 @@ export default async function ProfilePage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
+    // Watch dates for components
+    const watchDates = watchedItems.filter(m => m.date).map(m => m.date);
+
+    // Movies by date for interactive heatmap
+    const moviesByDate: Record<string, string[]> = {};
+    watchedItems.forEach(item => {
+        if (item.date) {
+            const dateKey = item.date.split("T")[0];
+            if (!moviesByDate[dateKey]) moviesByDate[dateKey] = [];
+            moviesByDate[dateKey].push(item.title);
+        }
+    });
+
+    // Milestone data
+    const milestoneData = watchedItems
+        .filter(i => i.date)
+        .map(i => ({ date: i.date, title: i.title }));
+
+    // Badge data
+    const earnedBadges = getEarnedBadges(watchedItems, genreCounts);
+    const allBadges = getAllBadges();
+    const earnedBadgeIds = earnedBadges.map(b => b.id);
+
     return (
         <main style={{ padding: "40px 20px", minHeight: "100vh", maxWidth: "800px", margin: "0 auto" }}>
             <Link href="/" style={{ color: "var(--accent)", marginBottom: "30px", display: "inline-block" }}>
@@ -137,10 +211,53 @@ export default async function ProfilePage() {
                 </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "40px" }}>
-                <StatCard label="Movies Watched" value={totalMovies} />
-                <StatCard label="TV Shows" value={totalShows} />
-                <StatCard label="Total Items" value={watchedItems.length} />
+            {/* Main Stats Grid - Animated */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "15px", marginBottom: "30px" }}>
+                <StatCardEnhanced label="Movies" value={totalMovies} emoji="🎬" color="#f97316" delay={0} />
+                <StatCardEnhanced label="TV Shows" value={totalShows} emoji="📺" color="#3b82f6" delay={0.1} />
+                <StatCardEnhanced label="Watch Hours" value={totalHours} suffix="h" emoji="⏱️" color="#22c55e" delay={0.2} />
+                <StatCardEnhanced label="Avg Rating" value={parseFloat(avgRating) || 0} decimals={1} emoji="⭐" color="#fbbf24" delay={0.3} />
+            </div>
+
+            {/* Secondary Stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "15px", marginBottom: "30px" }}>
+                <div style={{
+                    padding: "20px",
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: "16px",
+                    textAlign: "center",
+                }}>
+                    <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: "8px" }}>Total Watch Time</div>
+                    <div style={{ fontSize: "1.8rem", fontWeight: "700", color: "#a855f7" }}>{totalDays} days</div>
+                </div>
+                {longestMovie && (
+                    <div style={{
+                        padding: "20px",
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: "16px",
+                        textAlign: "center",
+                    }}>
+                        <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: "8px" }}>Longest Movie</div>
+                        <div style={{ fontSize: "0.95rem", fontWeight: "600", marginBottom: "4px" }}>{longestMovie.title}</div>
+                        <div style={{ fontSize: "0.8rem", color: "#666" }}>{longestMovie.runtimeMins} minutes</div>
+                    </div>
+                )}
+                {avgDecade && (
+                    <div style={{
+                        padding: "20px",
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: "16px",
+                        textAlign: "center",
+                    }}>
+                        <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: "8px" }}>Average Era</div>
+                        <div style={{ fontSize: "1.8rem", fontWeight: "700", color: "#ec4899" }}>{avgDecade}</div>
+                    </div>
+                )}
+            </div>
+
+            {/* Did You Know */}
+            <div style={{ marginBottom: "30px" }}>
+                <DidYouKnow items={watchedItems} />
             </div>
 
             {/* Quick Links */}
@@ -187,9 +304,41 @@ export default async function ProfilePage() {
             {/* Fix Missing Data */}
             <ReEnrichButton />
 
-            {/* Viewing Activity Heatmap */}
-            <ViewingHeatmap watchDates={watchedItems.filter(m => m.date).map(m => m.date)} />
+            {/* Streak Stats */}
+            <div style={{ marginBottom: "30px" }}>
+                <h2 style={{ fontSize: "1.3rem", fontWeight: "600", marginBottom: "15px" }}>🔥 Streaks</h2>
+                <StreakStats watchDates={watchDates} />
+            </div>
 
+            {/* Viewing Activity Heatmap */}
+            <ViewingHeatmap watchDates={watchDates} moviesByDate={moviesByDate} />
+
+            {/* Charts Row */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginBottom: "30px" }}>
+                <BestDayChart watchDates={watchDates} />
+                <PeakHoursChart watchDates={watchDates} />
+            </div>
+
+            {/* Monthly Trend */}
+            <div style={{ marginBottom: "30px" }}>
+                <MonthlyTrendChart watchDates={watchDates} />
+            </div>
+
+            {/* Badge Progress */}
+            <div style={{ marginBottom: "30px" }}>
+                <BadgeProgress
+                    allBadges={allBadges}
+                    earnedBadgeIds={earnedBadgeIds}
+                    currentStats={{ totalMovies, genreCounts }}
+                />
+            </div>
+
+            {/* Milestones */}
+            <div style={{ marginBottom: "30px" }}>
+                <MilestoneTimeline watchDates={milestoneData} />
+            </div>
+
+            {/* Era Distribution */}
             <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
                 <h2 style={{ fontSize: "1.5rem", marginBottom: "20px" }}>Era Distribution</h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
@@ -205,6 +354,11 @@ export default async function ProfilePage() {
                 </div>
             </div>
 
+            {/* Genre Trend Chart */}
+            <div style={{ marginBottom: "30px" }}>
+                <GenreTrendChart items={watchedItems} />
+            </div>
+
             {/* Genre Radar Chart */}
             {genreData.length >= 3 && (
                 <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
@@ -214,6 +368,21 @@ export default async function ProfilePage() {
                 </div>
             )}
 
+            {/* Language Distribution */}
+            <div style={{ marginBottom: "30px" }}>
+                <LanguagePieChart items={watchedItems} />
+            </div>
+
+            {/* Country Distribution */}
+            <div style={{ marginBottom: "30px" }}>
+                <CountryMap items={watchedItems} />
+            </div>
+
+            {/* Studios */}
+            <div style={{ marginBottom: "30px" }}>
+                <StudioStats items={watchedItems} />
+            </div>
+
             {/* Affinities */}
             {(topDirectors.length > 0 || topActors.length > 0) && (
                 <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
@@ -222,15 +391,27 @@ export default async function ProfilePage() {
                 </div>
             )}
 
+            {/* Shareable Stats Card */}
+            <div style={{ marginBottom: "30px" }}>
+                <ShareableStatsCard
+                    username={user?.username || "MovieLover"}
+                    totalMovies={totalMovies}
+                    totalShows={totalShows}
+                    topGenre={topGenre}
+                    avgRating={avgRating}
+                    watchHours={totalHours}
+                />
+            </div>
+
             {/* Collection Badges */}
-            <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
+            <div id="badges" style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
                 <h2 style={{ fontSize: "1.5rem", marginBottom: "10px" }}>Collection Badges</h2>
                 <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>
-                    {getEarnedBadges(watchedItems, genreCounts).length} of {getAllBadges().length} earned
+                    {earnedBadges.length} of {allBadges.length} earned
                 </p>
                 <BadgeGrid
-                    earnedBadges={getEarnedBadges(watchedItems, genreCounts)}
-                    allBadges={getAllBadges()}
+                    earnedBadges={earnedBadges}
+                    allBadges={allBadges}
                 />
             </div>
 
@@ -278,14 +459,5 @@ export default async function ProfilePage() {
                 </div>
             </div>
         </main>
-    );
-}
-
-function StatCard({ label, value }: { label: string, value: number }) {
-    return (
-        <div style={{ background: "rgba(255,255,255,0.05)", padding: "20px", borderRadius: "16px", textAlign: "center" }}>
-            <div style={{ fontSize: "2.5rem", fontWeight: "800", marginBottom: "5px", color: "var(--accent)" }}>{value}</div>
-            <div style={{ color: "#888", fontSize: "0.9rem", fontWeight: "500" }}>{label}</div>
-        </div>
     );
 }

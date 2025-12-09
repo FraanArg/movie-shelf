@@ -26,6 +26,11 @@ export interface MovieItem {
     Plot?: string;
     Genre?: string;
     Runtime?: string;
+    // NEW: Additional metadata for stats
+    Country?: string;
+    Language?: string;
+    Production?: string;  // Production company/studio
+    Writer?: string;      // Writers (can include composers for some entries)
     // Ratings
     tmdbRating?: number;
     imdbRating?: string;

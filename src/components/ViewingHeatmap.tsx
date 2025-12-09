@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ViewingHeatmapProps {
     watchDates: string[]; // Array of ISO date strings when movies were watched
+    moviesByDate?: Record<string, string[]>; // Optional: movie titles by date
 }
 
 interface DayData {
@@ -12,7 +14,9 @@ interface DayData {
     movies: string[];
 }
 
-export default function ViewingHeatmap({ watchDates }: ViewingHeatmapProps) {
+export default function ViewingHeatmap({ watchDates, moviesByDate = {} }: ViewingHeatmapProps) {
+    const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
+
     // Calculate the last 365 days of data
     const heatmapData = useMemo(() => {
         const today = new Date();
@@ -41,7 +45,7 @@ export default function ViewingHeatmap({ watchDates }: ViewingHeatmapProps) {
             currentWeek.push({
                 date: dateStr,
                 count: countByDate[dateStr] || 0,
-                movies: [],
+                movies: moviesByDate[dateStr] || [],
             });
 
             if (currentWeek.length === 7) {
@@ -56,7 +60,7 @@ export default function ViewingHeatmap({ watchDates }: ViewingHeatmapProps) {
         }
 
         return weeks;
-    }, [watchDates]);
+    }, [watchDates, moviesByDate]);
 
     const maxCount = useMemo(() => {
         return Math.max(...watchDates.map(d => {
@@ -94,6 +98,16 @@ export default function ViewingHeatmap({ watchDates }: ViewingHeatmapProps) {
     const totalWatched = watchDates.length;
     const daysWithActivity = new Set(watchDates.map(d => d.split("T")[0])).size;
 
+    const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+        });
+    };
+
     return (
         <div style={{
             padding: "20px",
@@ -103,6 +117,7 @@ export default function ViewingHeatmap({ watchDates }: ViewingHeatmapProps) {
             borderRadius: "16px",
             border: "1px solid var(--glass-border)",
             marginBottom: "30px",
+            position: "relative",
         }}>
             <div style={{
                 display: "flex",
@@ -189,6 +204,7 @@ export default function ViewingHeatmap({ watchDates }: ViewingHeatmapProps) {
                             <div
                                 key={dayIndex}
                                 title={`${day.date}: ${day.count} ${day.count === 1 ? "movie" : "movies"} watched`}
+                                onClick={() => day.count > 0 && setSelectedDay(day)}
                                 style={{
                                     width: "10px",
                                     height: "10px",
@@ -235,6 +251,114 @@ export default function ViewingHeatmap({ watchDates }: ViewingHeatmapProps) {
                 ))}
                 <span>More</span>
             </div>
+
+            {/* Selected Day Modal */}
+            <AnimatePresence>
+                {selectedDay && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedDay(null)}
+                        style={{
+                            position: "fixed",
+                            inset: 0,
+                            background: "rgba(0,0,0,0.7)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 100,
+                            padding: "20px",
+                        }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                                background: "var(--glass-bg)",
+                                backdropFilter: "blur(20px)",
+                                WebkitBackdropFilter: "blur(20px)",
+                                borderRadius: "16px",
+                                border: "1px solid var(--glass-border)",
+                                padding: "25px",
+                                maxWidth: "400px",
+                                width: "100%",
+                            }}
+                        >
+                            <div style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginBottom: "20px",
+                            }}>
+                                <div>
+                                    <div style={{
+                                        fontSize: "1.1rem",
+                                        fontWeight: "600",
+                                        marginBottom: "4px",
+                                    }}>
+                                        {formatDate(selectedDay.date)}
+                                    </div>
+                                    <div style={{
+                                        fontSize: "0.85rem",
+                                        color: "#22c55e",
+                                        fontWeight: "500",
+                                    }}>
+                                        {selectedDay.count} {selectedDay.count === 1 ? "movie" : "movies"} watched
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedDay(null)}
+                                    style={{
+                                        background: "rgba(255,255,255,0.1)",
+                                        border: "none",
+                                        borderRadius: "8px",
+                                        padding: "8px 12px",
+                                        color: "var(--foreground)",
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {selectedDay.movies.length > 0 ? (
+                                <div style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "10px",
+                                    maxHeight: "300px",
+                                    overflowY: "auto",
+                                }}>
+                                    {selectedDay.movies.map((movie, i) => (
+                                        <div
+                                            key={i}
+                                            style={{
+                                                padding: "12px",
+                                                background: "rgba(255,255,255,0.05)",
+                                                borderRadius: "8px",
+                                                fontSize: "0.9rem",
+                                            }}
+                                        >
+                                            🎬 {movie}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div style={{
+                                    textAlign: "center",
+                                    padding: "20px",
+                                    color: "#666",
+                                }}>
+                                    Movie titles not available for this date
+                                </div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

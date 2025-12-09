@@ -68,6 +68,11 @@ export async function POST() {
                         Runtime: tmdbData.runtime || item.Runtime,
                         posterUrl: tmdbData.posterUrl || item.posterUrl,
                         tmdbRating: tmdbData.tmdbRating || item.tmdbRating,
+                        // NEW: Additional fields for stats
+                        Country: tmdbData.country || "N/A",
+                        Language: tmdbData.language || "N/A",
+                        Production: tmdbData.production || "N/A",
+                        Writer: tmdbData.writer || "N/A",
                         enrichAttempted: true, // Mark as successfully enriched
                     });
                 } else {
