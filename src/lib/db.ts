@@ -40,6 +40,8 @@ export interface MovieItem {
     watchedEpisodes?: number;
     totalSeasons?: number;
     currentSeason?: number;
+    // Enrichment tracking
+    enrichAttempted?: boolean;
 }
 
 // In-Memory Cache for local development
