@@ -280,3 +280,75 @@ export const getShowsInProgress = async (accessToken: string, clientId: string) 
         return [];
     }
 };
+
+// Get user's personal ratings for movies and shows
+export interface TraktRating {
+    rated_at: string;
+    rating: number; // 1-10 scale
+    type: "movie" | "show";
+    movie?: TraktMovie;
+    show?: TraktShow;
+}
+
+export const getUserRatings = async (accessToken: string, clientId: string): Promise<TraktRating[]> => {
+    try {
+        const [movieRatings, showRatings] = await Promise.all([
+            fetch(`${TRAKT_API_URL}/sync/ratings/movies`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`,
+                    "trakt-api-version": "2",
+                    "trakt-api-key": clientId,
+                },
+            }).then(r => r.ok ? r.json() : []),
+            fetch(`${TRAKT_API_URL}/sync/ratings/shows`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`,
+                    "trakt-api-version": "2",
+                    "trakt-api-key": clientId,
+                },
+            }).then(r => r.ok ? r.json() : []),
+        ]);
+
+        return [...movieRatings, ...showRatings];
+    } catch (error) {
+        console.error("Error fetching user ratings:", error);
+        return [];
+    }
+};
+
+// Get user's comments on movies and shows
+export interface TraktComment {
+    id: number;
+    comment: string;
+    spoiler: boolean;
+    review: boolean;
+    created_at: string;
+    type: "movie" | "show";
+    movie?: TraktMovie;
+    show?: TraktShow;
+}
+
+export const getUserComments = async (accessToken: string, clientId: string): Promise<TraktComment[]> => {
+    try {
+        const response = await fetch(`${TRAKT_API_URL}/users/me/comments?include_replies=false&limit=100`, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+                "trakt-api-version": "2",
+                "trakt-api-key": clientId,
+            },
+        });
+
+        if (!response.ok) {
+            console.error("Failed to fetch user comments:", response.status);
+            return [];
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching user comments:", error);
+        return [];
+    }
+};

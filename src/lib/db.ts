@@ -40,6 +40,7 @@ export interface MovieItem {
     // User Personal Data
     userRating?: number; // 1-5 star rating
     userNote?: string; // Personal review/notes
+    traktRating?: number; // 1-10 scale from Trakt
     // TV Show Progress
     totalEpisodes?: number;
     watchedEpisodes?: number;

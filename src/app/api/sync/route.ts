@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getWatchedMovies, getWatchedShows, getWatchlist, getShowsInProgress } from "@/lib/trakt";
+import { getWatchedMovies, getWatchedShows, getWatchlist, getShowsInProgress, getUserRatings, getUserComments } from "@/lib/trakt";
 import { getMovieInfoForSync } from "@/lib/tmdb";
 import { getLocalMovies } from "@/lib/local-library";
 import { getDB, saveDB, MovieItem } from "@/lib/db";
@@ -41,18 +41,37 @@ export async function POST() {
             }));
 
         // 3. Fetch ALL Trakt Watched Movies and Shows (complete data, not paginated)
-        const [watchedMovies, watchedShows] = await Promise.all([
+        const [watchedMovies, watchedShows, watchlist, userRatings, userComments] = await Promise.all([
             getWatchedMovies(token, clientId),
             getWatchedShows(token, clientId),
+            getWatchlist(token, clientId),
+            getUserRatings(token, clientId),
+            getUserComments(token, clientId),
         ]);
 
         console.log("Trakt watched movies:", watchedMovies.length);
         console.log("Trakt watched shows:", watchedShows.length);
+        console.log("Trakt ratings:", userRatings.length);
+        console.log("Trakt comments:", userComments.length);
 
-        // 4. Fetch Watchlist
-        const watchlist = await getWatchlist(token, clientId);
+        // Create lookup maps for ratings and comments by IMDB ID
+        const ratingsByImdbId = new Map<string, number>();
+        for (const rating of userRatings) {
+            const imdbId = rating.movie?.ids?.imdb || rating.show?.ids?.imdb;
+            if (imdbId) {
+                ratingsByImdbId.set(imdbId, rating.rating);
+            }
+        }
 
-        // 5. Fetch shows in progress (incomplete shows should be marked as "watching")
+        const commentsByImdbId = new Map<string, string>();
+        for (const comment of userComments) {
+            const imdbId = comment.movie?.ids?.imdb || comment.show?.ids?.imdb;
+            if (imdbId && comment.comment) {
+                commentsByImdbId.set(imdbId, comment.comment);
+            }
+        }
+
+        // 4. Fetch shows in progress (incomplete shows should be marked as "watching")
         const inProgressShows = await getShowsInProgress(token, clientId);
         const inProgressImdbIds = new Set(
             inProgressShows.map(item => item.show.ids?.imdb).filter(Boolean)
@@ -137,6 +156,10 @@ export async function POST() {
             const data = item.data;
             const imdbId = data.ids.imdb;
 
+            // Get Trakt rating and comment if available
+            const traktRating = imdbId ? ratingsByImdbId.get(imdbId) : undefined;
+            const userNote = imdbId ? commentsByImdbId.get(imdbId) : undefined;
+
             try {
                 const tmdbData = imdbId ? await getMovieInfoForSync(imdbId) : null;
 
@@ -156,6 +179,9 @@ export async function POST() {
                     Genre: tmdbData?.genres || "N/A",
                     Runtime: tmdbData?.runtime || "N/A",
                     tmdbRating: tmdbData?.tmdbRating,
+                    // Trakt personal data
+                    traktRating: traktRating,
+                    userNote: userNote,
                 };
             } catch {
                 return {
@@ -167,7 +193,9 @@ export async function POST() {
                     type: item.type,
                     source: "trakt" as const,
                     date: item.date,
-                    list: item.list || "watched"
+                    list: item.list || "watched",
+                    traktRating: traktRating,
+                    userNote: userNote,
                 };
             }
         }));
@@ -187,11 +215,30 @@ export async function POST() {
         // Update existing items:
         // - watchlist → watched (if now watched)
         // - watched → watching (if show is in progress)
+        // - Add ratings and comments from Trakt
         const updatedExisting = existingItems.map(item => {
+            let updatedItem = { ...item };
+
+            // Sync Trakt rating if available (don't overwrite if already set)
+            if (item.imdbId && ratingsByImdbId.has(item.imdbId)) {
+                const rating = ratingsByImdbId.get(item.imdbId);
+                if (rating !== undefined && !item.traktRating) {
+                    updatedItem.traktRating = rating;
+                }
+            }
+
+            // Sync Trakt comment as note if available (don't overwrite existing notes)
+            if (item.imdbId && commentsByImdbId.has(item.imdbId)) {
+                const comment = commentsByImdbId.get(item.imdbId);
+                if (comment && !item.userNote) {
+                    updatedItem.userNote = comment;
+                }
+            }
+
             // Mark in-progress shows as "watching"
             if (item.type === "series" && item.imdbId && inProgressImdbIds.has(item.imdbId)) {
                 if (item.list !== "watching") {
-                    return { ...item, list: "watching" as const };
+                    updatedItem.list = "watching" as const;
                 }
             }
             // Mark watchlist items as watched if they're now watched
@@ -200,10 +247,11 @@ export async function POST() {
                     (item.imdbId && watchedImdbIds.has(item.imdbId)) ||
                     (item.id && watchedTraktIds.has(item.id));
                 if (isNowWatched) {
-                    return { ...item, list: "watched" as const };
+                    updatedItem.list = "watched" as const;
                 }
             }
-            return item;
+
+            return updatedItem;
         });
 
         const updatedCollection = [...updatedExisting, ...formattedLocalMovies, ...enrichedItems];
