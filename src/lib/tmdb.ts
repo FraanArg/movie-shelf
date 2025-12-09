@@ -100,6 +100,68 @@ export async function getMovieDetails(imdbId: string): Promise<TMDbMovieDetails 
 }
 
 /**
+ * Search for a movie by title and year, returns IMDB ID and basic info
+ * Useful for movies that don't have an IMDB ID in Trakt (like extended editions)
+ */
+export async function searchMovieByTitle(title: string, year?: string): Promise<{
+    imdbId: string | null;
+    tmdbId: number | null;
+    runtime: number | null;
+    posterUrl: string | null;
+} | null> {
+    const apiKey = process.env.TMDB_API_KEY;
+    if (!apiKey) return null;
+
+    try {
+        // Clean up title - remove "(Extended)", "(Director's Cut)", etc. for better search
+        const cleanTitle = title
+            .replace(/\s*\(Extended\)|\s*\(Extended Edition\)|\s*\(Director's Cut\)|\s*\(Special Edition\)/gi, "")
+            .trim();
+
+        const yearParam = year ? `&year=${year}` : "";
+        const searchResponse = await fetch(
+            `${TMDB_API_URL}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}${yearParam}`,
+            { next: { revalidate: 3600 } }
+        );
+
+        if (!searchResponse.ok) return null;
+
+        const searchData = await searchResponse.json();
+        const match = searchData.results?.[0];
+
+        if (!match) return null;
+
+        // Get full details including IMDB ID
+        const detailsResponse = await fetch(
+            `${TMDB_API_URL}/movie/${match.id}?api_key=${apiKey}`,
+            { next: { revalidate: 3600 } }
+        );
+
+        if (!detailsResponse.ok) return null;
+
+        const details = await detailsResponse.json();
+
+        // For extended editions, try to estimate longer runtime
+        // Extended editions are typically 15-30% longer than theatrical
+        let runtime = details.runtime;
+        if (title.toLowerCase().includes("extended") && runtime) {
+            // Assume extended is ~20% longer than theatrical
+            runtime = Math.round(runtime * 1.2);
+        }
+
+        return {
+            imdbId: details.imdb_id || null,
+            tmdbId: match.id,
+            runtime: runtime,
+            posterUrl: details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : null,
+        };
+    } catch (error) {
+        console.error("TMDb search error:", error);
+        return null;
+    }
+}
+
+/**
  * Get basic movie info for sync (lighter than full details)
  */
 export async function getMovieInfoForSync(imdbId: string): Promise<{

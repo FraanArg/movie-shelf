@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getWatchedMovies, getWatchedShows, getWatchlist, getShowsInProgress, getUserRatings, getUserComments } from "@/lib/trakt";
-import { getMovieInfoForSync } from "@/lib/tmdb";
+import { getMovieInfoForSync, searchMovieByTitle } from "@/lib/tmdb";
 import { getLocalMovies } from "@/lib/local-library";
 import { getDB, saveDB, MovieItem } from "@/lib/db";
 
@@ -154,7 +154,18 @@ export async function POST() {
         // 7. Enrich batch with TMDb (parallel for speed)
         const enrichedItems: MovieItem[] = await Promise.all(batch.map(async (item) => {
             const data = item.data;
-            const imdbId = data.ids.imdb;
+            let imdbId = data.ids.imdb;
+            let fallbackData = null;
+
+            // If no IMDB ID, try to find it by searching title
+            if (!imdbId && item.type === "movie") {
+                console.log(`No IMDB ID for "${data.title}" - searching by title...`);
+                fallbackData = await searchMovieByTitle(data.title, data.year?.toString());
+                if (fallbackData?.imdbId) {
+                    imdbId = fallbackData.imdbId;
+                    console.log(`Found IMDB ID for "${data.title}": ${imdbId}`);
+                }
+            }
 
             // Get Trakt rating and comment if available
             const traktRating = imdbId ? ratingsByImdbId.get(imdbId) : undefined;
@@ -163,12 +174,23 @@ export async function POST() {
             try {
                 const tmdbData = imdbId ? await getMovieInfoForSync(imdbId) : null;
 
+                // Use fallback data for runtime if we had to search by title
+                // This helps with extended editions where the runtime estimate is more accurate
+                let runtime = tmdbData?.runtime || "N/A";
+                if (fallbackData?.runtime && !tmdbData?.runtime) {
+                    runtime = `${fallbackData.runtime} min`;
+                }
+                // If title contains "Extended" and we have a runtime, use the estimated extended runtime
+                if (data.title.toLowerCase().includes("extended") && fallbackData?.runtime) {
+                    runtime = `${fallbackData.runtime} min`;
+                }
+
                 return {
                     id: data.ids.trakt,
                     imdbId: imdbId,
                     title: data.title,
                     year: (data.year ?? "Unknown").toString(),
-                    posterUrl: tmdbData?.posterUrl || null,
+                    posterUrl: tmdbData?.posterUrl || fallbackData?.posterUrl || null,
                     type: item.type,
                     source: "trakt" as const,
                     date: item.date,
@@ -177,7 +199,7 @@ export async function POST() {
                     Actors: tmdbData?.actors || "N/A",
                     Plot: tmdbData?.plot || "N/A",
                     Genre: tmdbData?.genres || "N/A",
-                    Runtime: tmdbData?.runtime || "N/A",
+                    Runtime: runtime,
                     tmdbRating: tmdbData?.tmdbRating,
                     // Trakt personal data
                     traktRating: traktRating,
@@ -189,11 +211,12 @@ export async function POST() {
                     imdbId: imdbId,
                     title: data.title,
                     year: (data.year ?? "Unknown").toString(),
-                    posterUrl: null,
+                    posterUrl: fallbackData?.posterUrl || null,
                     type: item.type,
                     source: "trakt" as const,
                     date: item.date,
                     list: item.list || "watched",
+                    Runtime: fallbackData?.runtime ? `${fallbackData.runtime} min` : "N/A",
                     traktRating: traktRating,
                     userNote: userNote,
                 };
