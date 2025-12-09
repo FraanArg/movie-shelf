@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getWatchedMovies, getWatchedShows, getWatchlist } from "@/lib/trakt";
+import { getWatchedMovies, getWatchedShows, getWatchlist, getShowsInProgress } from "@/lib/trakt";
 import { getMovieInfoForSync } from "@/lib/tmdb";
 import { getLocalMovies } from "@/lib/local-library";
 import { getDB, saveDB, MovieItem } from "@/lib/db";
@@ -51,6 +51,13 @@ export async function POST() {
 
         // 4. Fetch Watchlist
         const watchlist = await getWatchlist(token, clientId);
+
+        // 5. Fetch shows in progress (incomplete shows should be marked as "watching")
+        const inProgressShows = await getShowsInProgress(token, clientId);
+        const inProgressImdbIds = new Set(
+            inProgressShows.map(item => item.show.ids?.imdb).filter(Boolean)
+        );
+        console.log("Shows in progress:", inProgressShows.length);
 
         // 5. Find NEW items only (not in DB)
         const processedIds = new Set();
@@ -177,9 +184,18 @@ export async function POST() {
             ...watchedShows.map((w: any) => w.show?.ids?.imdb),
         ].filter(Boolean));
 
-        // Update existing items from watchlist to watched if they're now watched
+        // Update existing items:
+        // - watchlist → watched (if now watched)
+        // - watched → watching (if show is in progress)
         const updatedExisting = existingItems.map(item => {
-            if (item.list === "watchlist") {
+            // Mark in-progress shows as "watching"
+            if (item.type === "series" && item.imdbId && inProgressImdbIds.has(item.imdbId)) {
+                if (item.list !== "watching") {
+                    return { ...item, list: "watching" as const };
+                }
+            }
+            // Mark watchlist items as watched if they're now watched
+            else if (item.list === "watchlist") {
                 const isNowWatched =
                     (item.imdbId && watchedImdbIds.has(item.imdbId)) ||
                     (item.id && watchedTraktIds.has(item.id));
