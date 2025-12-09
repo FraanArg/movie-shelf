@@ -17,10 +17,10 @@ export async function POST() {
     try {
         const items = await getDB();
 
-        // Find items missing Director or Actors data
+        // Find items missing Director data (what Stats page uses)
         const needsEnrichment = items.filter(item =>
             item.imdbId && // Has IMDB ID so we can look it up
-            (!item.Director || item.Director === "N/A" || !item.Actors || item.Actors === "N/A")
+            (!item.Director || item.Director === "N/A")
         );
 
         if (needsEnrichment.length === 0) {
@@ -115,7 +115,7 @@ export async function GET() {
 
         const needsEnrichment = items.filter(item =>
             item.imdbId &&
-            (!item.Director || item.Director === "N/A" || !item.Actors || item.Actors === "N/A")
+            (!item.Director || item.Director === "N/A")
         );
 
         const moviesMissing = needsEnrichment.filter(i => i.type === "movie");
