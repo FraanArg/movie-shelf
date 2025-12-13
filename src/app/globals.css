@@ -303,6 +303,44 @@ h6 {
   margin: 0;
 }
 
+/* ====== ACCESSIBILITY ====== */
+/* Focus visible styles for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--tint);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Remove default focus outline (we use focus-visible instead) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure buttons and links have visible focus */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--tint);
+  outline-offset: 2px;
+}
+
+/* Skip to content link for screen readers */
+.skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-elevated);
+  color: var(--label-primary);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  z-index: 1000;
+  transition: top 0.2s ease;
+}
+
+.skip-to-content:focus {
+  top: var(--space-md);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
