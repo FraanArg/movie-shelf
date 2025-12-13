@@ -17,155 +17,208 @@ export default function Spine({ movie }: { movie: MovieItem }) {
     const isWorn = (movie.plays || 0) >= 5;
 
     // Darker backgrounds for better white text contrast
-    // If worn, desaturate significantly
-    const saturation = type === "vhs" ? (isWorn ? "10%" : "30%") : (isWorn ? "30%" : "60%");
-    const lightness = type === "vhs" ? (isWorn ? "25%" : "20%") : (isWorn ? "35%" : "25%"); // Worn is slightly lighter/faded
+    const saturation = type === "vhs" ? (isWorn ? "10%" : "25%") : (isWorn ? "25%" : "55%");
+    const lightness = type === "vhs" ? (isWorn ? "20%" : "18%") : (isWorn ? "30%" : "22%");
 
     const baseColor = `hsl(${hue}, ${saturation}, ${lightness})`;
+    const highlightColor = `hsl(${hue}, ${saturation}, ${parseInt(lightness) + 10}%)`;
+    const shadowColor = `hsl(${hue}, ${saturation}, ${parseInt(lightness) - 8}%)`;
 
-    // Significantly wider for readability
-    const width = type === "vhs" ? "60px" : type === "dvd" ? "50px" : "42px";
-    const height = type === "bluray" ? "290px" : "320px";
+    // Dimensions - vary slightly for realism
+    const widthVariation = (hash % 6) - 3; // -3 to +3px variation
+    const width = type === "vhs" ? `${58 + widthVariation}px` : type === "dvd" ? `${48 + widthVariation}px` : `${40 + widthVariation}px`;
+    const height = type === "bluray" ? "280px" : "310px";
 
     return (
-        <Link href={`/movie/${movie.imdbId}`} style={{ textDecoration: "none", perspective: "1000px" }}>
+        <Link href={`/movie/${movie.imdbId}`} style={{ textDecoration: "none" }}>
             <div
                 className={`spine spine-${type}`}
                 style={{
                     width,
                     height,
+                    position: "relative",
+                    cursor: "pointer",
+                    transition: "transform 0.2s ease-out",
+                    transformStyle: "preserve-3d",
+                    marginRight: "-1px", // Slight overlap for bookshelf feel
+                }}
+            >
+                {/* Main spine face */}
+                <div style={{
+                    position: "absolute",
+                    inset: 0,
                     background: type === "vhs"
-                        ? `linear-gradient(90deg, #1a1a1a 0%, ${baseColor} 15%, ${baseColor} 85%, #1a1a1a 100%)`
+                        ? `linear-gradient(90deg, ${shadowColor} 0%, ${baseColor} 12%, ${highlightColor} 50%, ${baseColor} 88%, ${shadowColor} 100%)`
                         : type === "dvd"
-                            ? `linear-gradient(90deg, #000 0%, #222 5%, ${baseColor} 15%, ${baseColor} 85%, #222 95%, #000 100%)`
-                            : `linear-gradient(90deg, #000 0%, #003366 10%, #0056b3 20%, #003366 80%, #000 100%)`, // Deep Blu-ray blue
+                            ? `linear-gradient(90deg, #1a1a1a 0%, ${shadowColor} 8%, ${baseColor} 20%, ${highlightColor} 50%, ${baseColor} 80%, ${shadowColor} 92%, #1a1a1a 100%)`
+                            : `linear-gradient(90deg, #000814 0%, #001d3d 15%, #003566 35%, #0077b6 50%, #003566 65%, #001d3d 85%, #000814 100%)`,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: type === "vhs" ? "12px 4px" : "8px 2px",
-                    borderRight: "1px solid rgba(255,255,255,0.08)",
-                    boxShadow: "2px 0 8px rgba(0,0,0,0.7)",
-                    position: "relative",
-                    transition: "transform 0.2s ease-out, box-shadow 0.2s ease",
-                    cursor: "pointer",
+                    padding: type === "vhs" ? "10px 3px" : "8px 2px",
+                    borderRadius: type === "vhs" ? "1px" : "2px",
+                    boxShadow: `
+                        inset 2px 0 4px rgba(255,255,255,0.08),
+                        inset -2px 0 4px rgba(0,0,0,0.3),
+                        inset 0 2px 4px rgba(255,255,255,0.05),
+                        inset 0 -2px 4px rgba(0,0,0,0.2)
+                    `,
                     overflow: "hidden",
-                    borderRadius: type === "vhs" ? "1px" : "3px",
-                    transformOrigin: "center left",
-                    marginRight: "2px",
-                    filter: isWorn ? "sepia(0.2) contrast(0.9)" : "none" // Global worn filter
-                }}
-            >
-                {/* Worn Texture Overlay */}
-                {isWorn && (
-                    <div style={{
-                        position: "absolute",
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        background: "url(https://www.transparenttextures.com/patterns/cracked-concrete.png)", // Cracks/creases
-                        opacity: 0.3,
-                        pointerEvents: "none",
-                        mixBlendMode: "overlay"
-                    }} />
-                )}
-
-                {/* Spine Creases (CSS Gradients) */}
-                {isWorn && (
-                    <div style={{
-                        position: "absolute",
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        background: "repeating-linear-gradient(0deg, transparent, transparent 49%, rgba(255,255,255,0.1) 50%, transparent 51%)",
-                        backgroundSize: "100% 60px", // Horizontal creases every 60px
-                        opacity: 0.2,
-                        pointerEvents: "none"
-                    }} />
-                )}
-
-                {/* VHS Texture - Subtle */}
-                {type === "vhs" && (
-                    <div style={{
-                        position: "absolute",
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        background: "url(https://www.transparenttextures.com/patterns/cardboard-flat.png)",
-                        opacity: 0.2, // Reduced opacity for better text contrast
-                        pointerEvents: "none"
-                    }} />
-                )}
-
-                {/* Header */}
-                <div style={{
-                    width: "100%",
-                    height: type === "vhs" ? "auto" : "24px",
-                    marginBottom: "10px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 2,
-                    opacity: isWorn ? 0.7 : 0.9 // Faded header
+                    filter: isWorn ? "sepia(0.15) contrast(0.92) brightness(0.95)" : "none",
                 }}>
-                    {type === "vhs" ? (
+                    {/* Spine edge highlight - left side */}
+                    <div style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: "3px",
+                        background: "linear-gradient(90deg, rgba(255,255,255,0.15), transparent)",
+                    }} />
+
+                    {/* Spine edge shadow - right side */}
+                    <div style={{
+                        position: "absolute",
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: "4px",
+                        background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.4))",
+                    }} />
+
+                    {/* Worn Texture Overlay */}
+                    {isWorn && (
                         <div style={{
-                            background: isWorn ? "#bbb" : "#ddd", // Yellowed/dirty sticker
-                            color: "#000",
-                            padding: "1px 4px",
-                            fontSize: "0.55rem",
-                            fontWeight: "800",
-                            fontFamily: "var(--font-oswald)",
-                            borderRadius: "1px",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.5)"
-                        }}>VHS</div>
-                    ) : type === "dvd" ? (
-                        <div style={{ fontSize: "0.5rem", fontWeight: "900", color: "#aaa", letterSpacing: "1px", fontFamily: "var(--font-oswald)" }}>DVD</div>
-                    ) : (
-                        <div style={{
-                            width: "18px",
-                            height: "8px",
-                            background: "rgba(255,255,255,0.7)",
-                            borderRadius: "50% 50% 10% 10%"
+                            position: "absolute",
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: "repeating-linear-gradient(0deg, transparent 0px, transparent 40px, rgba(255,255,255,0.03) 40px, transparent 42px)",
+                            pointerEvents: "none",
                         }} />
                     )}
+
+                    {/* VHS Paper Sleeve texture */}
+                    {type === "vhs" && (
+                        <div style={{
+                            position: "absolute",
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: `
+                                repeating-linear-gradient(90deg, transparent 0px, transparent 3px, rgba(0,0,0,0.05) 3px, transparent 4px)
+                            `,
+                            opacity: 0.5,
+                            pointerEvents: "none",
+                        }} />
+                    )}
+
+                    {/* Header - Format indicator */}
+                    <div style={{
+                        width: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 2,
+                        opacity: isWorn ? 0.7 : 0.9,
+                        marginBottom: "8px",
+                    }}>
+                        {type === "vhs" ? (
+                            <div style={{
+                                background: isWorn ? "#c8c0b0" : "#e8e0d0",
+                                color: "#1a1a1a",
+                                padding: "2px 6px",
+                                fontSize: "0.5rem",
+                                fontWeight: 800,
+                                fontFamily: "var(--font-system)",
+                                borderRadius: "1px",
+                                boxShadow: "0 1px 2px rgba(0,0,0,0.4)",
+                                letterSpacing: "1px",
+                            }}>VHS</div>
+                        ) : type === "dvd" ? (
+                            <div style={{
+                                fontSize: "0.45rem",
+                                fontWeight: 800,
+                                color: "rgba(255,255,255,0.6)",
+                                letterSpacing: "1.5px",
+                                fontFamily: "var(--font-system)",
+                            }}>DVD</div>
+                        ) : (
+                            <div style={{
+                                width: "16px",
+                                height: "7px",
+                                background: "linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(200,200,255,0.6) 100%)",
+                                borderRadius: "3px 3px 1px 1px",
+                                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                            }} />
+                        )}
+                    </div>
+
+                    {/* Title */}
+                    <div style={{
+                        writingMode: "vertical-rl",
+                        textOrientation: "mixed",
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: isWorn ? "rgba(255,255,255,0.8)" : "#fff",
+                        fontWeight: 600,
+                        fontFamily: "var(--font-oswald)",
+                        fontSize: movie.title.length > 25 ? "0.85rem" : "1rem",
+                        letterSpacing: "0.3px",
+                        textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)",
+                        maxHeight: "220px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        lineHeight: 1.15,
+                        zIndex: 2,
+                        textTransform: "uppercase",
+                    }}>
+                        {movie.title}
+                    </div>
+
+                    {/* Year */}
+                    <div style={{
+                        marginTop: "8px",
+                        fontSize: "0.7rem",
+                        color: "rgba(255,255,255,0.65)",
+                        writingMode: "horizontal-tb",
+                        fontWeight: 500,
+                        fontFamily: "var(--font-system)",
+                        zIndex: 2,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.6)",
+                        background: "rgba(0,0,0,0.2)",
+                        padding: "2px 6px",
+                        borderRadius: "2px",
+                    }}>
+                        {movie.year}
+                    </div>
                 </div>
 
-                {/* Title */}
+                {/* Right edge (3D depth) - the actual box front */}
                 <div style={{
-                    writingMode: "vertical-rl",
-                    textOrientation: "mixed",
-                    flex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: isWorn ? "rgba(255,255,255,0.85)" : "#fff", // Faded text
-                    fontWeight: "500",
-                    fontFamily: "var(--font-oswald)",
-                    fontSize: movie.title.length > 30 ? "0.9rem" : "1.1rem",
-                    letterSpacing: "0.5px",
-                    textShadow: "0 2px 4px #000",
-                    maxHeight: "240px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    lineHeight: "1.2",
-                    zIndex: 2,
-                    padding: "0", // Removed padding to let flex center perfectly
-                    width: "100%",
-                    textTransform: "uppercase"
-                }}>
-                    {movie.title}
-                </div>
+                    position: "absolute",
+                    right: "-4px",
+                    top: "2px",
+                    bottom: "2px",
+                    width: "4px",
+                    background: `linear-gradient(180deg, ${highlightColor}, ${baseColor}, ${shadowColor})`,
+                    transform: "rotateY(-80deg)",
+                    transformOrigin: "left",
+                    boxShadow: "inset 0 0 2px rgba(0,0,0,0.3)",
+                    borderRadius: "0 1px 1px 0",
+                }} />
 
-                {/* Year */}
+                {/* Bottom shadow on shelf */}
                 <div style={{
-                    marginTop: "10px",
-                    fontSize: "0.75rem",
-                    color: "rgba(255,255,255,0.7)",
-                    writingMode: "horizontal-tb",
-                    fontWeight: "400",
-                    fontFamily: "var(--font-oswald)",
-                    zIndex: 2,
-                    textShadow: "0 1px 2px #000"
-                }}>
-                    {movie.year}
-                </div>
+                    position: "absolute",
+                    bottom: "-6px",
+                    left: "2px",
+                    right: "2px",
+                    height: "6px",
+                    background: "radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 70%)",
+                    filter: "blur(2px)",
+                }} />
             </div>
-        </Link >
+        </Link>
     );
 }

@@ -65,26 +65,88 @@ export default function SpineGrid({ initialMovies, sort }: SpineGridProps) {
     }, [observerTarget, hasMore, loading, page]);
 
     return (
-        <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "flex-end",
-            gap: "4px",
-            padding: "60px 40px",
-            background: "linear-gradient(to bottom, #1a1a1a, #000)",
-            borderRadius: "20px",
-            boxShadow: "inset 0 0 100px #000",
-            minHeight: "80vh"
+        <div className="shelf-container" style={{
+            position: "relative",
+            padding: "40px 20px 60px",
+            minHeight: "80vh",
         }}>
-            {movies.map((movie: any) => (
-                <Spine key={`${movie.id}-${movie.imdbId}`} movie={movie} />
-            ))}
+            {/* Bookshelf Background */}
+            <div style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(180deg, #1a1410 0%, #0d0a08 100%)",
+                borderRadius: "var(--radius-xl)",
+                boxShadow: "inset 0 20px 60px rgba(0,0,0,0.8), inset 0 -20px 60px rgba(0,0,0,0.5)",
+            }} />
+
+            {/* Shelf Rows */}
+            <div style={{
+                position: "relative",
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "flex-end",
+                gap: "3px",
+                paddingBottom: "40px",
+            }}>
+                {movies.map((movie: any) => (
+                    <Spine key={`${movie.id}-${movie.imdbId}`} movie={movie} />
+                ))}
+            </div>
+
+            {/* Shelf Surface - The wooden ledge */}
+            <div style={{
+                position: "absolute",
+                bottom: "20px",
+                left: "10px",
+                right: "10px",
+                height: "24px",
+                background: "linear-gradient(180deg, #3d2d1f 0%, #2a1f15 50%, #1a1410 100%)",
+                borderRadius: "0 0 var(--radius-md) var(--radius-md)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1)",
+            }}>
+                {/* Wood grain texture */}
+                <div style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,0,0,0.1) 40px, rgba(0,0,0,0.1) 42px)",
+                    borderRadius: "0 0 var(--radius-md) var(--radius-md)",
+                }} />
+            </div>
+
+            {/* Back Wall Shadow */}
+            <div style={{
+                position: "absolute",
+                bottom: "44px",
+                left: "20px",
+                right: "20px",
+                height: "20px",
+                background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%)",
+                pointerEvents: "none",
+            }} />
 
             {hasMore && (
-                <div ref={observerTarget} style={{ width: "100%", textAlign: "center", marginTop: "40px", height: "20px" }}>
+                <div ref={observerTarget} style={{
+                    width: "100%",
+                    textAlign: "center",
+                    marginTop: "40px",
+                    height: "20px",
+                    position: "relative",
+                    zIndex: 10,
+                }}>
                     {loading && <span style={{ color: "#888" }}>Loading more...</span>}
                 </div>
             )}
+
+            {/* Ambient light from top */}
+            <div style={{
+                position: "absolute",
+                top: 0,
+                left: "10%",
+                right: "10%",
+                height: "80px",
+                background: "radial-gradient(ellipse at center top, rgba(255,240,220,0.08) 0%, transparent 70%)",
+                pointerEvents: "none",
+            }} />
         </div>
     );
 }

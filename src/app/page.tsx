@@ -22,6 +22,7 @@ import { getDB, getDemoData } from "@/lib/db";
 import DemoBanner from "@/components/DemoBanner";
 import LargeTitle from "@/components/LargeTitle";
 import DefaultSortRedirect from "@/components/DefaultSortRedirect";
+import MobileFilters from "@/components/MobileFilters";
 
 // Genre keywords for filtering
 const genreKeywords: Record<string, string[]> = {
@@ -340,6 +341,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           )}
         </div>
       )}
+
+      {/* Mobile Filter FAB + BottomSheet */}
+      <Suspense fallback={null}>
+        <MobileFilters />
+      </Suspense>
     </main>
   );
 }
