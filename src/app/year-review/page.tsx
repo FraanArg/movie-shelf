@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { getDB } from "@/lib/db";
 
 export default async function YearInReviewPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
@@ -98,39 +99,69 @@ export default async function YearInReviewPage({ searchParams }: { searchParams:
     const years = Array.from(allYears).sort((a, b) => b - a);
 
     return (
-        <main style={{ padding: "40px 20px", minHeight: "100vh", maxWidth: "800px", margin: "0 auto" }}>
-            <Link href="/profile" style={{ color: "var(--accent)", marginBottom: "30px", display: "inline-block" }}>
-                &larr; Back to Stats
-            </Link>
-
-            {/* Year selector */}
-            <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "30px" }}>
-                <h1 style={{
-                    fontSize: "2.5rem",
-                    fontWeight: "700",
-                    background: "linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                }}>
-                    {year} Year in Review
+        <main style={{
+            padding: "0 var(--space-md)",
+            paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+            minHeight: "100vh",
+            maxWidth: "800px",
+            margin: "0 auto",
+        }}>
+            {/* Header */}
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-sm)",
+                paddingTop: "var(--space-lg)",
+            }}>
+                <Link
+                    href="/profile"
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "var(--radius-full)",
+                        color: "var(--tint)",
+                        textDecoration: "none",
+                    }}
+                >
+                    <ChevronLeft size={24} />
+                </Link>
+                <h1
+                    className="large-title"
+                    style={{
+                        fontSize: "var(--font-size-largetitle)",
+                        fontWeight: 700,
+                        color: "var(--label-primary)",
+                        margin: 0,
+                        fontFamily: "var(--font-system)",
+                    }}
+                >
+                    {year} Review
                 </h1>
             </div>
 
             {/* Year navigation */}
-            <div style={{ display: "flex", gap: "10px", marginBottom: "40px", flexWrap: "wrap" }}>
+            <div style={{
+                display: "flex",
+                gap: "var(--space-sm)",
+                marginTop: "var(--space-lg)",
+                marginBottom: "var(--space-xl)",
+                flexWrap: "wrap",
+            }}>
                 {years.map(y => (
                     <Link
                         key={y}
                         href={`/year-review?year=${y}`}
                         style={{
-                            padding: "8px 16px",
-                            borderRadius: "20px",
-                            background: y === year ? "var(--accent)" : "rgba(255,255,255,0.1)",
-                            color: y === year ? "white" : "var(--foreground)",
+                            padding: "var(--space-sm) var(--space-md)",
+                            borderRadius: "var(--radius-full)",
+                            background: y === year ? "var(--tint)" : "var(--fill-tertiary)",
+                            color: y === year ? "white" : "var(--label-primary)",
                             textDecoration: "none",
-                            fontSize: "0.9rem",
-                            fontWeight: y === year ? "600" : "400",
+                            fontSize: "var(--font-size-subhead)",
+                            fontWeight: y === year ? 600 : 400,
                         }}
                     >
                         {y}

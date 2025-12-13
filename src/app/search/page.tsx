@@ -4,7 +4,8 @@ import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import styles from "@/components/Bookshelf.module.css"; // Reuse grid styles
+import { ChevronLeft, Search, Plus } from "lucide-react";
+import styles from "@/components/Bookshelf.module.css";
 
 function SearchContent() {
     const searchParams = useSearchParams();
@@ -24,9 +25,6 @@ function SearchContent() {
         router.push(`/search?q=${encodeURIComponent(query)}`);
 
         try {
-            // We'll implement a server action or API route for this, 
-            // but for now let's fetch directly or use a server action.
-            // Let's use a simple API route for search to keep client clean.
             const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
             const data = await res.json();
             setResults(data.Search || []);
@@ -50,84 +48,210 @@ function SearchContent() {
             }),
         });
         alert("Added to library!");
-        router.refresh(); // Refresh to update UI if needed
+        router.refresh();
     };
 
     return (
-        <main style={{ padding: "40px 20px", minHeight: "100vh" }}>
-            <Link href="/" style={{ marginBottom: "20px", display: "inline-block", color: "var(--accent)" }}>
-                &larr; Back to Shelf
-            </Link>
-
-            <h1 style={{ marginBottom: "20px" }}>Search Movies</h1>
-
-            <form onSubmit={handleSearch} style={{ marginBottom: "40px", display: "flex", gap: "10px" }}>
-                <input
-                    name="query"
-                    defaultValue={q}
-                    placeholder="Search title..."
+        <main style={{
+            padding: "0 var(--space-md)",
+            paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+            minHeight: "100vh",
+        }}>
+            {/* Header */}
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-sm)",
+                paddingTop: "var(--space-lg)",
+                marginBottom: "var(--space-lg)",
+            }}>
+                <Link
+                    href="/"
                     style={{
-                        flex: 1,
-                        padding: "12px",
-                        borderRadius: "8px",
-                        border: "1px solid var(--shelf-border-top)",
-                        background: "rgba(255,255,255,0.1)",
-                        color: "var(--foreground)",
-                        fontSize: "1rem"
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "var(--radius-full)",
+                        color: "var(--tint)",
+                        textDecoration: "none",
                     }}
-                />
+                >
+                    <ChevronLeft size={24} />
+                </Link>
+                <h1
+                    className="large-title"
+                    style={{
+                        fontSize: "var(--font-size-largetitle)",
+                        fontWeight: 700,
+                        color: "var(--label-primary)",
+                        margin: 0,
+                        fontFamily: "var(--font-system)",
+                    }}
+                >
+                    Search
+                </h1>
+            </div>
+
+            {/* Search Form */}
+            <form onSubmit={handleSearch} style={{
+                marginBottom: "var(--space-xl)",
+                display: "flex",
+                gap: "var(--space-sm)",
+            }}>
+                <div style={{
+                    flex: 1,
+                    position: "relative",
+                }}>
+                    <Search
+                        size={18}
+                        style={{
+                            position: "absolute",
+                            left: "var(--space-md)",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            color: "var(--label-tertiary)",
+                        }}
+                    />
+                    <input
+                        name="query"
+                        defaultValue={q}
+                        placeholder="Search movies and TV shows..."
+                        style={{
+                            width: "100%",
+                            padding: "var(--space-md)",
+                            paddingLeft: "44px",
+                            borderRadius: "var(--radius-lg)",
+                            border: "none",
+                            background: "var(--fill-tertiary)",
+                            color: "var(--label-primary)",
+                            fontSize: "var(--font-size-body)",
+                            fontFamily: "var(--font-system)",
+                        }}
+                    />
+                </div>
                 <button
                     type="submit"
                     style={{
-                        padding: "0 24px",
-                        borderRadius: "8px",
-                        background: "var(--accent)",
+                        padding: "0 var(--space-lg)",
+                        borderRadius: "var(--radius-lg)",
+                        background: "var(--tint)",
                         color: "white",
                         border: "none",
-                        fontSize: "1rem",
-                        cursor: "pointer"
+                        fontSize: "var(--font-size-body)",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        minHeight: "44px",
                     }}
                 >
                     {loading ? "..." : "Search"}
                 </button>
             </form>
 
-            <div className={styles.grid}>
-                {results.map((movie) => (
-                    <div key={movie.imdbID} style={{ position: "relative" }}>
-                        <div style={{ aspectRatio: "2/3", position: "relative", marginBottom: "10px" }}>
-                            {movie.Poster !== "N/A" ? (
-                                <Image src={movie.Poster} alt={movie.Title} fill style={{ objectFit: "cover", borderRadius: "4px" }} />
-                            ) : (
-                                <div style={{ width: "100%", height: "100%", background: "#333", borderRadius: "4px" }} />
-                            )}
+            {/* Results */}
+            {results.length > 0 && (
+                <div className={styles.grid}>
+                    {results.map((movie) => (
+                        <div key={movie.imdbID} style={{ position: "relative" }}>
+                            <div style={{
+                                aspectRatio: "2/3",
+                                position: "relative",
+                                marginBottom: "var(--space-sm)",
+                                borderRadius: "var(--radius-md)",
+                                overflow: "hidden",
+                                background: "var(--fill-tertiary)",
+                            }}>
+                                {movie.Poster !== "N/A" ? (
+                                    <Image
+                                        src={movie.Poster}
+                                        alt={movie.Title}
+                                        fill
+                                        style={{ objectFit: "cover" }}
+                                    />
+                                ) : (
+                                    <div style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize: "2rem",
+                                    }}>
+                                        🎬
+                                    </div>
+                                )}
+                            </div>
+                            <div style={{
+                                fontSize: "var(--font-size-subhead)",
+                                fontWeight: 600,
+                                marginBottom: "var(--space-xxs)",
+                                color: "var(--label-primary)",
+                            }}>
+                                {movie.Title}
+                            </div>
+                            <div style={{
+                                fontSize: "var(--font-size-footnote)",
+                                color: "var(--label-secondary)",
+                                marginBottom: "var(--space-sm)",
+                            }}>
+                                {movie.Year}
+                            </div>
+                            <button
+                                onClick={() => addToLibrary(movie)}
+                                style={{
+                                    width: "100%",
+                                    padding: "var(--space-sm)",
+                                    background: "var(--fill-tertiary)",
+                                    border: "none",
+                                    borderRadius: "var(--radius-sm)",
+                                    color: "var(--tint)",
+                                    cursor: "pointer",
+                                    fontSize: "var(--font-size-subhead)",
+                                    fontWeight: 500,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "var(--space-xs)",
+                                    minHeight: "44px",
+                                }}
+                            >
+                                <Plus size={16} />
+                                Add to Shelf
+                            </button>
                         </div>
-                        <div style={{ fontSize: "0.9rem", fontWeight: "bold", marginBottom: "4px" }}>{movie.Title}</div>
-                        <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: "8px" }}>{movie.Year}</div>
-                        <button
-                            onClick={() => addToLibrary(movie)}
-                            style={{
-                                width: "100%",
-                                padding: "8px",
-                                background: "rgba(255,255,255,0.1)",
-                                border: "1px solid rgba(255,255,255,0.2)",
-                                borderRadius: "4px",
-                                color: "var(--foreground)",
-                                cursor: "pointer"
-                            }}
-                        >
-                            + Add to Shelf
-                        </button>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Empty State */}
+            {results.length === 0 && !loading && q && (
+                <div style={{
+                    textAlign: "center",
+                    padding: "var(--space-xxl)",
+                    color: "var(--label-secondary)",
+                }}>
+                    <div style={{ fontSize: "4rem", marginBottom: "var(--space-lg)" }}>🔍</div>
+                    <p style={{ fontSize: "var(--font-size-body)" }}>
+                        No results found for &quot;{q}&quot;
+                    </p>
+                </div>
+            )}
         </main>
     );
 }
 
 export default function SearchPage() {
     return (
-        <Suspense fallback={<div style={{ padding: "40px", color: "white" }}>Loading search...</div>}>
+        <Suspense fallback={
+            <div style={{
+                padding: "var(--space-xl) var(--space-md)",
+                textAlign: "center",
+                color: "var(--label-secondary)",
+            }}>
+                Loading search...
+            </div>
+        }>
             <SearchContent />
         </Suspense>
     );

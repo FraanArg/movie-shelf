@@ -31,6 +31,7 @@ export default function SortControls() {
         { label: "Year", value: "year" },
         { label: "Added", value: "date" },
         { label: "Rating", value: "rating" },
+        { label: "🎲", value: "random" },
     ];
 
     return (

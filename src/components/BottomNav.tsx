@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, List, Play, BarChart3, Search } from "lucide-react";
+import { Home, List, Play, BarChart3, Settings } from "lucide-react";
 
 const navItems = [
     { label: "Library", href: "/", icon: Home },
     { label: "Watchlist", href: "/watchlist", icon: List },
     { label: "Watching", href: "/watching", icon: Play },
     { label: "Stats", href: "/profile", icon: BarChart3 },
-    { label: "Search", href: "/search", icon: Search },
+    { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function BottomNav() {

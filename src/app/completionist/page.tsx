@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ChevronLeft } from "lucide-react";
 import { getDB, MovieItem } from "@/lib/db";
 
 interface PersonProgress {
@@ -81,37 +82,54 @@ export default async function CompletionistPage() {
         .slice(0, 15);
 
     return (
-        <main style={{ padding: "0 0 80px 0", minHeight: "100vh" }}>
-            <div style={{ padding: "30px 40px 15px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                    <Link href="/profile" style={{
-                        fontSize: "1.2rem",
+        <main style={{
+            padding: "0 var(--space-md)",
+            paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+            minHeight: "100vh",
+        }}>
+            {/* Header */}
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-sm)",
+                paddingTop: "var(--space-lg)",
+            }}>
+                <Link
+                    href="/profile"
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "var(--radius-full)",
+                        color: "var(--tint)",
                         textDecoration: "none",
-                        color: "var(--foreground)",
-                        opacity: 0.6,
-                    }}>
-                        ←
-                    </Link>
-                    <h1 style={{
-                        fontSize: "2rem",
-                        fontWeight: "600",
-                        letterSpacing: "-0.3px",
-                        background: "linear-gradient(180deg, var(--foreground) 0%, rgba(255,255,255,0.7) 100%)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text"
-                    }}>
-                        🎯 Completionist Tracker
-                    </h1>
-                </div>
+                    }}
+                >
+                    <ChevronLeft size={24} />
+                </Link>
+                <h1
+                    className="large-title"
+                    style={{
+                        fontSize: "var(--font-size-largetitle)",
+                        fontWeight: 700,
+                        color: "var(--label-primary)",
+                        margin: 0,
+                        fontFamily: "var(--font-system)",
+                    }}
+                >
+                    Completionist
+                </h1>
             </div>
 
             <p style={{
-                padding: "0 40px 30px 40px",
-                color: "rgba(255,255,255,0.6)",
-                fontSize: "1rem",
+                color: "var(--label-secondary)",
+                fontSize: "var(--font-size-body)",
+                marginTop: "var(--space-sm)",
+                marginBottom: "var(--space-xl)",
             }}>
-                Track your progress toward completing filmographies of your favorite directors and actors.
+                Track your progress toward completing filmographies.
             </p>
 
             {/* Directors Section */}

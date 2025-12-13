@@ -21,6 +21,7 @@ import { fetchMoviesAction } from "@/app/actions";
 import { getDB, getDemoData } from "@/lib/db";
 import DemoBanner from "@/components/DemoBanner";
 import LargeTitle from "@/components/LargeTitle";
+import DefaultSortRedirect from "@/components/DefaultSortRedirect";
 
 // Genre keywords for filtering
 const genreKeywords: Record<string, string[]> = {
@@ -103,16 +104,26 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
 
   // Apply sorting (Default to A-Z unless 'recent' is selected)
   if (sort !== "recent") {
-    displayedMovies.sort((a, b) => {
-      if (sort === "year") {
-        return parseInt(b.year) - parseInt(a.year);
-      } else if (sort === "rating") {
-        return parseFloat(b.imdbRating || "0") - parseFloat(a.imdbRating || "0");
-      } else {
-        // Default: Title A-Z
-        return a.title.localeCompare(b.title);
+    if (sort === "random") {
+      // Fisher-Yates shuffle for random order
+      for (let i = displayedMovies.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [displayedMovies[i], displayedMovies[j]] = [displayedMovies[j], displayedMovies[i]];
       }
-    });
+    } else {
+      displayedMovies.sort((a, b) => {
+        if (sort === "year") {
+          return parseInt(b.year) - parseInt(a.year);
+        } else if (sort === "rating") {
+          return parseFloat(b.imdbRating || "0") - parseFloat(a.imdbRating || "0");
+        } else if (sort === "date") {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        } else {
+          // Default: Title A-Z
+          return a.title.localeCompare(b.title);
+        }
+      });
+    }
   }
 
   const isHome = sort === "dashboard"; // Default to A-Z grid, only show dashboard if requested
@@ -189,6 +200,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
 
   return (
     <main style={{ padding: "0 0 80px 0", minHeight: "100vh" }}>
+      {/* Apply default sort from settings */}
+      <Suspense fallback={null}>
+        <DefaultSortRedirect />
+      </Suspense>
+
       {/* Demo banner for unauthenticated users */}
       {isDemoMode && <DemoBanner traktAuthUrl={traktAuthUrl} />}
 
