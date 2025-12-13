@@ -43,6 +43,7 @@ next-env.d.ts
 # Local database
 *.db
 data/
+!**/demo-library.json
 .env*.local
 
 # clerk configuration (can include secrets)
