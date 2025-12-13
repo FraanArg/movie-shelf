@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import MovieGrid from "@/components/MovieGrid";
 import SortControls from "@/components/SortControls";
 import QuickFilters from "@/components/QuickFilters";
+import LargeTitle from "@/components/LargeTitle";
 import { getDB } from "@/lib/db";
 
 export default async function WatchlistPage({ searchParams }: { searchParams: Promise<{ sort?: string, genre?: string }> }) {
@@ -24,7 +25,6 @@ export default async function WatchlistPage({ searchParams }: { searchParams: Pr
     const uniqueItems = Array.from(new Map(watchlistItems.map(m => [m.imdbId || m.id, m])).values());
 
     let displayedMovies = [...uniqueItems];
-    let pageTitle = "Watchlist";
 
     // Genre filtering
     if (genre) {
@@ -49,33 +49,50 @@ export default async function WatchlistPage({ searchParams }: { searchParams: Pr
     const emptyState = uniqueItems.length === 0;
 
     return (
-        <main style={{ padding: "0 0 80px 0", minHeight: "100vh" }}>
-            <div style={{ padding: "30px 40px 15px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                    <Link href="/" style={{
-                        fontSize: "1.2rem",
+        <main style={{
+            padding: "0 var(--space-md)",
+            paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+            minHeight: "100vh"
+        }}>
+            {/* Header with back button and title */}
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-sm)",
+                paddingTop: "var(--space-lg)",
+            }}>
+                <Link
+                    href="/"
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "var(--radius-full)",
+                        color: "var(--tint)",
                         textDecoration: "none",
-                        color: "var(--foreground)",
-                        opacity: 0.6,
-                        transition: "opacity 0.2s ease"
-                    }}>
-                        ←
-                    </Link>
-                    <h1 style={{
-                        fontSize: "2rem",
-                        fontWeight: "600",
-                        letterSpacing: "-0.3px",
-                        background: "linear-gradient(180deg, var(--foreground) 0%, rgba(255,255,255,0.7) 100%)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text"
-                    }}>
-                        {pageTitle}
+                        fontSize: "1.5rem",
+                    }}
+                >
+                    ←
+                </Link>
+                <div style={{ flex: 1 }}>
+                    <h1
+                        className="large-title"
+                        style={{
+                            fontSize: "var(--font-size-title1)",
+                            fontWeight: 700,
+                            color: "var(--label-primary)",
+                            margin: 0,
+                            fontFamily: "var(--font-system)",
+                        }}
+                    >
+                        Watchlist
                     </h1>
                     <span style={{
-                        fontSize: "1rem",
-                        opacity: 0.6,
-                        fontWeight: "400"
+                        fontSize: "var(--font-size-subhead)",
+                        color: "var(--label-secondary)",
                     }}>
                         {uniqueItems.length} {uniqueItems.length === 1 ? "item" : "items"}
                     </span>
@@ -84,7 +101,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams: Pr
             </div>
 
             {/* Quick genre filter chips */}
-            <div style={{ padding: "0 40px" }}>
+            <div style={{ marginTop: "var(--space-md)" }}>
                 <Suspense fallback={null}>
                     <QuickFilters />
                 </Suspense>
@@ -92,35 +109,40 @@ export default async function WatchlistPage({ searchParams }: { searchParams: Pr
 
             {emptyState ? (
                 <div style={{
-                    padding: "80px 40px",
+                    padding: "var(--space-xxl) var(--space-md)",
                     textAlign: "center",
-                    color: "var(--foreground)",
-                    opacity: 0.6
+                    color: "var(--label-secondary)",
                 }}>
-                    <div style={{ fontSize: "4rem", marginBottom: "20px" }}>📝</div>
-                    <h2 style={{ fontSize: "1.5rem", fontWeight: "500", marginBottom: "10px" }}>
+                    <div style={{ fontSize: "4rem", marginBottom: "var(--space-lg)" }}>📝</div>
+                    <h2 style={{
+                        fontSize: "var(--font-size-title2)",
+                        fontWeight: 600,
+                        marginBottom: "var(--space-sm)",
+                        color: "var(--label-primary)",
+                    }}>
                         Your watchlist is empty
                     </h2>
-                    <p style={{ fontSize: "1rem" }}>
+                    <p style={{ fontSize: "var(--font-size-body)", lineHeight: 1.5 }}>
                         Movies and shows you want to watch will appear here.
                         <br />
                         Add items from Trakt or search for movies to add.
                     </p>
                     <Link href="/search" style={{
                         display: "inline-block",
-                        marginTop: "20px",
-                        padding: "12px 24px",
-                        background: "var(--accent)",
+                        marginTop: "var(--space-lg)",
+                        padding: "var(--space-md) var(--space-xl)",
+                        background: "var(--tint)",
                         color: "white",
-                        borderRadius: "25px",
-                        fontWeight: "500",
-                        textDecoration: "none"
+                        borderRadius: "var(--radius-full)",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        fontSize: "var(--font-size-body)",
                     }}>
                         Search Movies
                     </Link>
                 </div>
             ) : (
-                <Suspense fallback={<div style={{ padding: "40px", textAlign: "center" }}>Loading...</div>}>
+                <Suspense fallback={<div style={{ padding: "var(--space-xl)", textAlign: "center" }}>Loading...</div>}>
                     <MovieGrid initialMovies={displayedMovies.slice(0, 50)} allMovies={displayedMovies} sort={sort || "title"} />
                 </Suspense>
             )}

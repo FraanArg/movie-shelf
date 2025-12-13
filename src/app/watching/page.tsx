@@ -53,29 +53,51 @@ export default async function WatchingPage() {
     const emptyState = watchingShows.length === 0;
 
     return (
-        <main style={{ padding: "0 0 80px 0", minHeight: "100vh" }}>
-            <div style={{ padding: "30px 40px 15px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                    <Link href="/" style={{
-                        fontSize: "1.2rem",
+        <main style={{
+            padding: "0 var(--space-md)",
+            paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+            minHeight: "100vh"
+        }}>
+            {/* Header with back button and title */}
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-sm)",
+                paddingTop: "var(--space-lg)",
+            }}>
+                <Link
+                    href="/"
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "var(--radius-full)",
+                        color: "var(--tint)",
                         textDecoration: "none",
-                        color: "var(--foreground)",
-                        opacity: 0.6,
-                    }}>
-                        ←
-                    </Link>
-                    <h1 style={{
-                        fontSize: "2rem",
-                        fontWeight: "600",
-                        letterSpacing: "-0.3px",
-                        background: "linear-gradient(180deg, var(--foreground) 0%, rgba(255,255,255,0.7) 100%)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text"
-                    }}>
+                        fontSize: "1.5rem",
+                    }}
+                >
+                    ←
+                </Link>
+                <div style={{ flex: 1 }}>
+                    <h1
+                        className="large-title"
+                        style={{
+                            fontSize: "var(--font-size-title1)",
+                            fontWeight: 700,
+                            color: "var(--label-primary)",
+                            margin: 0,
+                            fontFamily: "var(--font-system)",
+                        }}
+                    >
                         Currently Watching
                     </h1>
-                    <span style={{ fontSize: "1rem", opacity: 0.6, fontWeight: "400" }}>
+                    <span style={{
+                        fontSize: "var(--font-size-subhead)",
+                        color: "var(--label-secondary)",
+                    }}>
                         {watchingShows.length} {watchingShows.length === 1 ? "show" : "shows"}
                     </span>
                 </div>
@@ -83,16 +105,20 @@ export default async function WatchingPage() {
 
             {emptyState ? (
                 <div style={{
-                    padding: "80px 40px",
+                    padding: "var(--space-xxl) var(--space-md)",
                     textAlign: "center",
-                    color: "var(--foreground)",
-                    opacity: 0.6
+                    color: "var(--label-secondary)",
                 }}>
-                    <div style={{ fontSize: "4rem", marginBottom: "20px" }}>📺</div>
-                    <h2 style={{ fontSize: "1.5rem", fontWeight: "500", marginBottom: "10px" }}>
+                    <div style={{ fontSize: "4rem", marginBottom: "var(--space-lg)" }}>📺</div>
+                    <h2 style={{
+                        fontSize: "var(--font-size-title2)",
+                        fontWeight: 600,
+                        marginBottom: "var(--space-sm)",
+                        color: "var(--label-primary)",
+                    }}>
                         {errorMessage || "No shows in progress"}
                     </h2>
-                    <p style={{ fontSize: "1rem" }}>
+                    <p style={{ fontSize: "var(--font-size-body)", lineHeight: 1.5 }}>
                         {!token ? (
                             <>Connect to Trakt from the home page to see your progress.</>
                         ) : (
@@ -101,11 +127,11 @@ export default async function WatchingPage() {
                     </p>
                 </div>
             ) : (
-                <div style={{ padding: "20px 40px" }}>
+                <div style={{ marginTop: "var(--space-lg)" }}>
                     <div style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-                        gap: "20px",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 350px), 1fr))",
+                        gap: "var(--space-md)",
                     }}>
                         {watchingShows.map((item) => (
                             <ShowProgressCard
@@ -132,19 +158,16 @@ function ShowProgressCard({
     posterUrl?: string;
 }) {
     const episodesLeft = progress.aired - progress.completed;
-    const hoursLeft = Math.round(episodesLeft * 0.75); // ~45min per episode
+    const hoursLeft = Math.round(episodesLeft * 0.75);
     const hasDetailLink = !!show.ids?.imdb;
 
     const CardContent = (
         <div style={{
             display: "flex",
-            gap: "20px",
-            padding: "20px",
-            background: "var(--glass-bg)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            borderRadius: "16px",
-            border: "1px solid var(--glass-border)",
+            gap: "var(--space-md)",
+            padding: "var(--space-md)",
+            background: "var(--bg-secondary)",
+            borderRadius: "var(--radius-lg)",
             transition: "transform 0.2s ease, box-shadow 0.2s ease",
             cursor: hasDetailLink ? "pointer" : "default",
         }}
@@ -152,12 +175,13 @@ function ShowProgressCard({
         >
             {/* Poster */}
             <div style={{
-                width: "100px",
-                height: "150px",
-                borderRadius: "10px",
+                width: "80px",
+                height: "120px",
+                borderRadius: "var(--radius-md)",
                 overflow: "hidden",
                 flexShrink: 0,
                 position: "relative",
+                background: "var(--fill-tertiary)",
             }}>
                 {posterUrl ? (
                     <Image
@@ -165,13 +189,12 @@ function ShowProgressCard({
                         alt={show.title}
                         fill
                         style={{ objectFit: "cover" }}
-                        sizes="100px"
+                        sizes="80px"
                     />
                 ) : (
                     <div style={{
                         width: "100%",
                         height: "100%",
-                        background: "rgba(255,255,255,0.1)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -183,12 +206,23 @@ function ShowProgressCard({
             </div>
 
             {/* Info */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
                 <div>
-                    <h3 style={{ fontSize: "1.1rem", fontWeight: "600", marginBottom: "5px" }}>
+                    <h3 style={{
+                        fontSize: "var(--font-size-headline)",
+                        fontWeight: 600,
+                        marginBottom: "var(--space-xxs)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                    }}>
                         {show.title}
                     </h3>
-                    <p style={{ fontSize: "0.85rem", opacity: 0.6, marginBottom: "10px" }}>
+                    <p style={{
+                        fontSize: "var(--font-size-footnote)",
+                        color: "var(--label-secondary)",
+                        marginBottom: "var(--space-sm)"
+                    }}>
                         {show.year}
                     </p>
                 </div>
@@ -198,27 +232,27 @@ function ShowProgressCard({
                     <div style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        marginBottom: "6px",
-                        fontSize: "0.8rem",
+                        marginBottom: "var(--space-xs)",
+                        fontSize: "var(--font-size-caption1)",
                     }}>
-                        <span style={{ opacity: 0.7 }}>
+                        <span style={{ color: "var(--label-secondary)" }}>
                             {progress.completed} / {progress.aired} episodes
                         </span>
-                        <span style={{ color: "var(--accent)", fontWeight: "600" }}>
+                        <span style={{ color: "var(--tint)", fontWeight: 600 }}>
                             {progress.percent.toFixed(0)}%
                         </span>
                     </div>
                     <div style={{
                         height: "6px",
-                        background: "rgba(255,255,255,0.1)",
-                        borderRadius: "3px",
+                        background: "var(--fill-tertiary)",
+                        borderRadius: "var(--radius-full)",
                         overflow: "hidden",
                     }}>
                         <div style={{
                             width: `${progress.percent}%`,
                             height: "100%",
-                            background: "linear-gradient(90deg, var(--accent), #30d158)",
-                            borderRadius: "3px",
+                            background: "linear-gradient(90deg, var(--tint), var(--tint-green))",
+                            borderRadius: "var(--radius-full)",
                             transition: "width 0.3s ease",
                         }} />
                     </div>
@@ -227,19 +261,14 @@ function ShowProgressCard({
                 {/* Time remaining */}
                 {episodesLeft > 0 && (
                     <div style={{
-                        marginTop: "10px",
-                        padding: "8px 12px",
-                        background: "rgba(255,255,255,0.05)",
-                        borderRadius: "8px",
-                        fontSize: "0.8rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
+                        marginTop: "var(--space-sm)",
+                        padding: "var(--space-xs) var(--space-sm)",
+                        background: "var(--fill-quaternary)",
+                        borderRadius: "var(--radius-sm)",
+                        fontSize: "var(--font-size-caption1)",
+                        color: "var(--label-secondary)",
                     }}>
-                        <span>⏱️</span>
-                        <span style={{ opacity: 0.8 }}>
-                            {episodesLeft} episodes left • ~{hoursLeft}h to finish
-                        </span>
+                        ⏱️ {episodesLeft} episodes left • ~{hoursLeft}h to finish
                     </div>
                 )}
             </div>
