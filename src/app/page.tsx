@@ -20,6 +20,7 @@ import { MOODS } from "@/components/MoodFilter";
 import { fetchMoviesAction } from "@/app/actions";
 import { getDB, getDemoData } from "@/lib/db";
 import DemoBanner from "@/components/DemoBanner";
+import LargeTitle from "@/components/LargeTitle";
 
 // Genre keywords for filtering
 const genreKeywords: Record<string, string[]> = {
@@ -192,34 +193,52 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
       {isDemoMode && <DemoBanner traktAuthUrl={traktAuthUrl} />}
 
       <TimeDial />
-      <div style={{ padding: "30px 40px 15px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-          {/* Only show back arrow on filtered views, not on default Library */}
-          {(sort || decade) && (
-            <Link href="/" style={{
-              fontSize: "1.2rem",
-              textDecoration: "none",
-              color: "var(--foreground)",
-              opacity: 0.6,
-              transition: "opacity 0.2s ease"
-            }}>
+
+      {/* Page header with large title */}
+      <div style={{ padding: "0 var(--space-md)" }}>
+        {(sort || decade) ? (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--space-sm)",
+            paddingTop: "var(--space-lg)",
+            paddingBottom: "var(--space-md)",
+          }}>
+            <Link
+              href="/"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "44px",
+                height: "44px",
+                borderRadius: "var(--radius-full)",
+                color: "var(--tint)",
+                textDecoration: "none",
+                fontSize: "1.5rem",
+              }}
+            >
               ←
             </Link>
-          )}
-          <h1 style={{
-            fontSize: "2rem",
-            fontWeight: "600",
-            letterSpacing: "-0.3px",
-            background: "linear-gradient(180deg, var(--foreground) 0%, rgba(255,255,255,0.7) 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text"
-          }}>
+            <h1
+              className="large-title"
+              style={{
+                fontSize: "var(--font-size-title1)",
+                fontWeight: 700,
+                color: "var(--label-primary)",
+                margin: 0,
+                letterSpacing: "-0.3px",
+                fontFamily: "var(--font-system)",
+              }}
+            >
+              {pageTitle}
+            </h1>
+          </div>
+        ) : (
+          <LargeTitle action={<SortControls />}>
             {pageTitle}
-          </h1>
-        </div>
-        {/* Always show SortControls on library views */}
-        <SortControls />
+          </LargeTitle>
+        )}
       </div>
 
       {/* Quick genre filter chips */}

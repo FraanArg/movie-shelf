@@ -1,53 +1,137 @@
 :root {
-  /* Cinematic Dark Palette */
+  /* ========== APPLE-LIKE DESIGN TOKENS ========== */
+
+  /* Typography - System Font Stack */
+  --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  --font-size-largetitle: 34px;
+  --font-size-title1: 28px;
+  --font-size-title2: 22px;
+  --font-size-title3: 20px;
+  --font-size-headline: 17px;
+  --font-size-body: 17px;
+  --font-size-callout: 16px;
+  --font-size-subhead: 15px;
+  --font-size-footnote: 13px;
+  --font-size-caption1: 12px;
+  --font-size-caption2: 11px;
+
+  /* Spacing - 4px base grid */
+  --space-xxs: 2px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  /* Radii - Apple-like rounded corners */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Colors - iOS Dark Mode Palette */
+  --bg-primary: #000000;
+  --bg-secondary: #1c1c1e;
+  --bg-tertiary: #2c2c2e;
+  --bg-elevated: #3a3a3c;
+  --bg-grouped: #1c1c1e;
+
+  --separator: rgba(84, 84, 88, 0.65);
+  --separator-opaque: #38383a;
+
+  --label-primary: #ffffff;
+  --label-secondary: rgba(235, 235, 245, 0.6);
+  --label-tertiary: rgba(235, 235, 245, 0.3);
+  --label-quaternary: rgba(235, 235, 245, 0.18);
+
+  --fill-primary: rgba(120, 120, 128, 0.36);
+  --fill-secondary: rgba(120, 120, 128, 0.32);
+  --fill-tertiary: rgba(120, 120, 128, 0.24);
+  --fill-quaternary: rgba(120, 120, 128, 0.18);
+
+  /* System Colors - iOS */
+  --tint: #0a84ff;
+  --tint-green: #30d158;
+  --tint-red: #ff453a;
+  --tint-orange: #ff9f0a;
+  --tint-yellow: #ffd60a;
+  --tint-purple: #bf5af2;
+  --tint-pink: #ff375f;
+  --tint-indigo: #5e5ce6;
+
+  /* Elevation - Subtle shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+
+  /* Legacy aliases for compatibility */
   --background-gradient: #000;
-  /* Fallback */
   --foreground: #f5f5f7;
   --accent: #0a84ff;
 
-  /* Liquid Glass Variables */
-  --glass-material: rgba(30, 30, 30, 0.4);
-  --glass-highlight: rgba(255, 255, 255, 0.15);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  /* Glass effects - simplified */
+  --glass-bg: rgba(30, 30, 30, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.08);
   --glass-text: #ffffff;
   --glass-text-inactive: rgba(255, 255, 255, 0.6);
-
-  /* Backdrop Variables */
-  --backdrop-filter: blur(10px) saturate(1.2) brightness(0.4);
-  --backdrop-mix-blend: screen;
-  --backdrop-opacity: 0.05;
-  --backdrop-overlay-gradient: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
 }
 
 [data-theme='light'] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f2f2f7;
+  --bg-tertiary: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-grouped: #f2f2f7;
+
+  --separator: rgba(60, 60, 67, 0.36);
+  --separator-opaque: #c6c6c8;
+
+  --label-primary: #000000;
+  --label-secondary: rgba(60, 60, 67, 0.6);
+  --label-tertiary: rgba(60, 60, 67, 0.3);
+  --label-quaternary: rgba(60, 60, 67, 0.18);
+
+  --fill-primary: rgba(120, 120, 128, 0.2);
+  --fill-secondary: rgba(120, 120, 128, 0.16);
+  --fill-tertiary: rgba(120, 120, 128, 0.12);
+  --fill-quaternary: rgba(120, 120, 128, 0.08);
+
+  /* System Colors - iOS Light */
+  --tint: #007aff;
+  --tint-green: #34c759;
+  --tint-red: #ff3b30;
+  --tint-orange: #ff9500;
+  --tint-yellow: #ffcc00;
+  --tint-purple: #af52de;
+  --tint-pink: #ff2d55;
+  --tint-indigo: #5856d6;
+
+  /* Legacy aliases */
   --background-gradient: #f5f5f7;
   --foreground: #1d1d1f;
-  --accent: #0066cc;
+  --accent: #007aff;
 
-  /* Light Glass - More opaque for readability */
-  --glass-material: rgba(255, 255, 255, 0.85);
-  --glass-highlight: rgba(0, 0, 0, 0.05);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.06);
   --glass-text: #1d1d1f;
   --glass-text-inactive: rgba(0, 0, 0, 0.5);
-
-  /* Backdrop Variables - Lighter and more airy */
-  --backdrop-filter: blur(30px) saturate(1.3) brightness(1.15);
-  --backdrop-mix-blend: multiply;
-  --backdrop-opacity: 0.02;
-  --backdrop-overlay-gradient: linear-gradient(to bottom, rgba(255, 255, 255, 0.7) 0%, rgba(245, 245, 247, 0.95) 100%);
 }
 
 body {
-  background-color: transparent;
-  color: var(--foreground);
-  font-family: var(--font-inter);
+  background-color: var(--bg-primary);
+  color: var(--label-primary);
+  font-family: var(--font-system);
+  font-size: var(--font-size-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
   overflow-x: hidden;
+  line-height: 1.47;
 }
 
 /* Film Grain & Vignette - DISABLED FOR PERFORMANCE
@@ -71,18 +155,14 @@ body::after {
   text-shadow: 2px 0 rgba(255, 0, 0, 0.5), -2px 0 rgba(0, 255, 255, 0.5);
 }
 
-/* Liquid Glass Utility */
+/* Liquid Glass Utility - Simplified */
 .liquid-glass {
-  background: var(--glass-material);
-  backdrop-filter: blur(40px) saturate(150%);
-  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-border);
-  box-shadow:
-    inset 0 1px 0 0 var(--glass-highlight),
-    /* Top inner highlight */
-    var(--glass-shadow);
-  /* Deep drop shadow */
-  border-radius: 30px;
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-xl);
   position: relative;
   overflow: hidden;
 }
@@ -209,23 +289,18 @@ body::after {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Typography */
+/* Typography - Apple-like headings */
 h1,
 h2,
-h3 {
-  font-family: var(--font-oswald);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: font-variation-settings 0.3s ease, letter-spacing 0.3s ease;
-}
-
-h1:hover,
-h2:hover,
-h3:hover {
-  font-variation-settings: "wght" 700, "wdth" 110;
-  letter-spacing: 2px;
-  text-shadow: 2px 0 rgba(255, 0, 0, 0.5), -2px 0 rgba(0, 255, 255, 0.5);
-  /* Chromatic Aberration on hover */
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-system);
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: var(--label-primary);
+  margin: 0;
 }
 
 /* Scrollbar */
@@ -464,17 +539,22 @@ h3:hover {
 /* Bottom navigation shown only on mobile */
 @media (max-width: 768px) {
   .bottom-nav {
-    display: block !important;
+    display: flex !important;
   }
 
   /* Hide desktop header nav on mobile */
-  header nav {
+  header nav.liquid-glass {
+    display: none !important;
+  }
+
+  /* Hide header action buttons on mobile */
+  header>div:last-child {
     display: none !important;
   }
 
   /* Add bottom padding for content above bottom nav */
   main {
-    padding-bottom: 90px !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
   }
 
   /* Larger touch targets */
@@ -485,8 +565,15 @@ h3:hover {
 
   /* Reduce padding on mobile */
   .page-content {
-    padding-left: 20px !important;
-    padding-right: 20px !important;
+    padding-left: var(--space-md) !important;
+    padding-right: var(--space-md) !important;
+  }
+
+  /* Large title style on mobile */
+  .large-title {
+    font-size: var(--font-size-largetitle) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.5px !important;
   }
 }
 

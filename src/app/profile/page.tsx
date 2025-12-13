@@ -1,27 +1,73 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { getTraktUser } from "@/lib/trakt";
 import { getDB } from "@/lib/db";
-import GenreRadarChart from "@/components/GenreRadarChart";
+import { getEarnedBadges, getAllBadges } from "@/lib/badges";
+
+// Light components - import normally
 import AffinityStats from "@/components/AffinityStats";
 import BadgeGrid from "@/components/BadgeGrid";
-import ViewingHeatmap from "@/components/ViewingHeatmap";
 import ReEnrichButton from "@/components/ReEnrichButton";
-import { getEarnedBadges, getAllBadges } from "@/lib/badges";
-// New components
 import StatCardEnhanced from "@/components/StatCardEnhanced";
 import StreakStats from "@/components/StreakStats";
-import BestDayChart from "@/components/BestDayChart";
-import MonthlyTrendChart from "@/components/MonthlyTrendChart";
 import BadgeProgress from "@/components/BadgeProgress";
-import MilestoneTimeline from "@/components/MilestoneTimeline";
-import PeakHoursChart from "@/components/PeakHoursChart";
 import DidYouKnow from "@/components/DidYouKnow";
-import LanguagePieChart from "@/components/LanguagePieChart";
-import ShareableStatsCard from "@/components/ShareableStatsCard";
-import GenreTrendChart from "@/components/GenreTrendChart";
-import CountryMap from "@/components/CountryMap";
-import StudioStats from "@/components/StudioStats";
+
+// Chart loading skeleton
+const ChartSkeleton = () => (
+    <div style={{
+        height: "200px",
+        background: "var(--fill-tertiary)",
+        borderRadius: "var(--radius-lg)",
+        animation: "pulse 1.5s ease-in-out infinite",
+    }} />
+);
+
+// Heavy chart components - dynamic import for code-splitting
+const GenreRadarChart = dynamic(() => import("@/components/GenreRadarChart"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const ViewingHeatmap = dynamic(() => import("@/components/ViewingHeatmap"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const BestDayChart = dynamic(() => import("@/components/BestDayChart"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const MonthlyTrendChart = dynamic(() => import("@/components/MonthlyTrendChart"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const MilestoneTimeline = dynamic(() => import("@/components/MilestoneTimeline"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const PeakHoursChart = dynamic(() => import("@/components/PeakHoursChart"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const LanguagePieChart = dynamic(() => import("@/components/LanguagePieChart"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const ShareableStatsCard = dynamic(() => import("@/components/ShareableStatsCard"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const GenreTrendChart = dynamic(() => import("@/components/GenreTrendChart"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const CountryMap = dynamic(() => import("@/components/CountryMap"), {
+    loading: () => <ChartSkeleton />,
+});
+
+const StudioStats = dynamic(() => import("@/components/StudioStats"), {
+    loading: () => <ChartSkeleton />,
+});
 
 export default async function ProfilePage() {
     const cookieStore = await cookies();

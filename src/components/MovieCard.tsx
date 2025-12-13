@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState, useEffect, memo } from "react";
+import { memo, useState } from "react";
 import { useBackdrop } from "./BackdropProvider";
-import { useXRay } from "./XRayProvider";
 
 interface MovieCardProps {
     id: number;
@@ -19,38 +18,9 @@ interface MovieCardProps {
 
 function MovieCardComponent({ id, imdbId, title, year, posterUrl, type, Runtime, imdbRating }: MovieCardProps) {
     const href = imdbId ? `/movie/${imdbId}` : "#";
-    const cardRef = useRef<HTMLDivElement>(null);
-    const innerRef = useRef<HTMLDivElement>(null);
     const [isHovering, setIsHovering] = useState(false);
-    const rafRef = useRef<number | null>(null);
+    const [imageLoaded, setImageLoaded] = useState(false);
     const { setBackdrop } = useBackdrop();
-    const { isXRayEnabled } = useXRay();
-
-    // Simplified hover handler - less frequent updates
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!cardRef.current || !innerRef.current) return;
-
-        // Only update every few frames for performance
-        if (rafRef.current) return;
-
-        rafRef.current = requestAnimationFrame(() => {
-            rafRef.current = null;
-            if (!cardRef.current || !innerRef.current) return;
-
-            const rect = cardRef.current.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-
-            // Reduced rotation for subtler effect
-            const rotateX = ((y - centerY) / centerY) * -5;
-            const rotateY = ((x - centerX) / centerX) * 5;
-
-            innerRef.current.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
-        });
-    };
 
     const handleMouseEnter = () => {
         setIsHovering(true);
@@ -59,129 +29,117 @@ function MovieCardComponent({ id, imdbId, title, year, posterUrl, type, Runtime,
 
     const handleMouseLeave = () => {
         setIsHovering(false);
-        if (rafRef.current) {
-            cancelAnimationFrame(rafRef.current);
-            rafRef.current = null;
-        }
-
-        if (innerRef.current) {
-            innerRef.current.style.transform = "rotateX(0deg) rotateY(0deg) scale(1)";
-        }
         setBackdrop(null);
     };
 
-    useEffect(() => {
-        return () => {
-            if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        };
-    }, []);
-
     return (
         <div
-            ref={cardRef}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
             onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             style={{
-                perspective: "800px",
                 cursor: "pointer",
-                contain: "layout style"
+                contain: "layout style",
             }}
         >
             <Link href={href}>
                 <div
-                    ref={innerRef}
                     style={{
-                        transform: "rotateX(0deg) rotateY(0deg) scale(1)",
-                        transition: "transform 0.15s ease-out, box-shadow 0.2s ease",
-                        borderRadius: "12px",
+                        borderRadius: "var(--radius-md)",
                         overflow: "hidden",
-                        boxShadow: isHovering
-                            ? "0 15px 35px rgba(0,0,0,0.35)"
-                            : "0 5px 15px rgba(0,0,0,0.2)",
+                        boxShadow: isHovering ? "var(--shadow-lg)" : "var(--shadow-sm)",
                         position: "relative",
                         aspectRatio: "2/3",
-                        background: "#1a1a1a",
-                        willChange: isHovering ? "transform" : "auto",
-                        backfaceVisibility: "hidden"
+                        background: "var(--bg-tertiary)",
+                        transition: "box-shadow 0.2s ease, transform 0.2s ease",
+                        transform: isHovering ? "scale(1.02)" : "scale(1)",
                     }}
                 >
-                    {/* Poster Image with blur-up effect */}
+                    {/* Skeleton placeholder */}
+                    {!imageLoaded && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                background: "var(--fill-tertiary)",
+                                animation: "pulse 1.5s ease-in-out infinite",
+                            }}
+                        />
+                    )}
+
+                    {/* Poster Image */}
                     <Image
                         src={posterUrl || "/placeholder.jpg"}
                         alt={title}
                         fill
-                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 15vw"
-                        className="blur-up"
-                        style={{ objectFit: "cover" }}
-                        loading="lazy"
-                        onLoad={(e) => {
-                            const img = e.currentTarget;
-                            img.classList.add("loaded");
+                        sizes="(max-width: 768px) 45vw, (max-width: 1200px) 20vw, 15vw"
+                        style={{
+                            objectFit: "cover",
+                            opacity: imageLoaded ? 1 : 0,
+                            transition: "opacity 0.3s ease",
                         }}
+                        loading="lazy"
+                        onLoad={() => setImageLoaded(true)}
                     />
 
-                    {/* X-Ray HUD Overlay */}
-                    {isXRayEnabled && (
-                        <div style={{
-                            position: "absolute",
-                            top: 0, left: 0, right: 0, bottom: 0,
-                            background: "rgba(0, 20, 40, 0.9)",
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            color: "#00f0ff",
-                            fontFamily: "monospace",
-                            padding: "20px",
-                            zIndex: 20
-                        }}>
-                            <div style={{ fontSize: "0.8rem", opacity: 0.7 }}>RUNTIME</div>
-                            <div style={{ fontSize: "1.3rem", fontWeight: "bold", marginBottom: "8px" }}>{Runtime || "N/A"}</div>
-
-                            <div style={{ fontSize: "0.8rem", opacity: 0.7 }}>RATING</div>
-                            <div style={{ fontSize: "1.3rem", fontWeight: "bold", marginBottom: "8px" }}>{imdbRating || "N/A"}</div>
-
-                            <div style={{ fontSize: "0.8rem", opacity: 0.7 }}>YEAR</div>
-                            <div style={{ fontSize: "1.3rem", fontWeight: "bold" }}>{year}</div>
-                        </div>
+                    {/* Hover gradient overlay */}
+                    {isHovering && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)",
+                                pointerEvents: "none",
+                            }}
+                        />
                     )}
 
-                    {/* Subtle hover gradient */}
-                    {isHovering && (
-                        <div style={{
-                            position: "absolute",
-                            top: 0, left: 0, right: 0, bottom: 0,
-                            background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%)",
-                            pointerEvents: "none"
-                        }} />
+                    {/* Type badge */}
+                    {type === "series" && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: "var(--space-sm)",
+                                right: "var(--space-sm)",
+                                background: "var(--tint)",
+                                color: "white",
+                                fontSize: "var(--font-size-caption2)",
+                                fontWeight: 600,
+                                padding: "2px 6px",
+                                borderRadius: "var(--radius-xs)",
+                            }}
+                        >
+                            TV
+                        </div>
                     )}
                 </div>
             </Link>
 
             {/* Title below card */}
-            <div style={{
-                marginTop: "8px",
-                textAlign: "center",
-                fontWeight: "500",
-                fontSize: "0.85rem",
-                color: "var(--foreground)",
-                opacity: 0.85,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap"
-            }}>
+            <div
+                style={{
+                    marginTop: "var(--space-sm)",
+                    textAlign: "center",
+                    fontWeight: 500,
+                    fontSize: "var(--font-size-footnote)",
+                    color: "var(--label-primary)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    fontFamily: "var(--font-system)",
+                }}
+            >
                 {title}
             </div>
 
             {/* Year subtitle */}
-            <div style={{
-                textAlign: "center",
-                fontSize: "0.75rem",
-                color: "var(--foreground)",
-                opacity: 0.45,
-                marginTop: "2px"
-            }}>
+            <div
+                style={{
+                    textAlign: "center",
+                    fontSize: "var(--font-size-caption2)",
+                    color: "var(--label-tertiary)",
+                    marginTop: "var(--space-xxs)",
+                }}
+            >
                 {year}
             </div>
         </div>
