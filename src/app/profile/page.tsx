@@ -1,9 +1,11 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { ChevronLeft, ChevronRight, Download, FileJson, FileSpreadsheet } from "lucide-react";
 import { getTraktUser } from "@/lib/trakt";
 import { getDB } from "@/lib/db";
 import { getEarnedBadges, getAllBadges } from "@/lib/badges";
+import GroupedSection, { GroupedRow } from "@/components/GroupedSection";
 
 // Light components - import normally
 import AffinityStats from "@/components/AffinityStats";
@@ -242,18 +244,72 @@ export default async function ProfilePage() {
     const earnedBadgeIds = earnedBadges.map(b => b.id);
 
     return (
-        <main style={{ padding: "40px 20px", minHeight: "100vh", maxWidth: "800px", margin: "0 auto" }}>
-            <Link href="/" style={{ color: "var(--accent)", marginBottom: "30px", display: "inline-block" }}>
-                &larr; Back to Library
-            </Link>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "40px" }}>
-                <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", fontWeight: "bold", color: "#fff" }}>
-                    {user?.username?.charAt(0).toUpperCase() || "U"}
+        <main style={{
+            padding: "0 var(--space-md)",
+            paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+            minHeight: "100vh",
+            maxWidth: "800px",
+            margin: "0 auto",
+        }}>
+            {/* Header */}
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-sm)",
+                paddingTop: "var(--space-lg)",
+                marginBottom: "var(--space-lg)",
+            }}>
+                <Link
+                    href="/"
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "var(--radius-full)",
+                        color: "var(--tint)",
+                        textDecoration: "none",
+                    }}
+                >
+                    <ChevronLeft size={24} />
+                </Link>
+                <div style={{ flex: 1 }}>
+                    <h1
+                        className="large-title"
+                        style={{
+                            fontSize: "var(--font-size-largetitle)",
+                            fontWeight: 700,
+                            color: "var(--label-primary)",
+                            margin: 0,
+                            fontFamily: "var(--font-system)",
+                        }}
+                    >
+                        Stats
+                    </h1>
+                    {user?.username && (
+                        <p style={{
+                            fontSize: "var(--font-size-subhead)",
+                            color: "var(--label-secondary)",
+                            marginTop: "var(--space-xxs)",
+                        }}>
+                            @{user.username}
+                        </p>
+                    )}
                 </div>
-                <div>
-                    <h1 style={{ fontSize: "2.5rem", fontWeight: "700", marginBottom: "5px" }}>{user?.name || "User Stats"}</h1>
-                    <p style={{ color: "#888" }}>@{user?.username || "trakt_user"}</p>
+                <div style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "var(--radius-full)",
+                    background: "var(--tint)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "var(--font-size-title2)",
+                    fontWeight: 700,
+                    color: "#fff",
+                }}>
+                    {user?.username?.charAt(0).toUpperCase() || "U"}
                 </div>
             </div>
 
@@ -307,45 +363,29 @@ export default async function ProfilePage() {
             </div>
 
             {/* Quick Links */}
-            <div style={{
-                display: "flex",
-                gap: "15px",
-                marginBottom: "30px",
-                flexWrap: "wrap",
-            }}>
-                <Link href="/completionist" style={{
-                    padding: "12px 20px",
-                    background: "var(--glass-bg)",
-                    backdropFilter: "blur(20px)",
-                    WebkitBackdropFilter: "blur(20px)",
-                    borderRadius: "12px",
-                    border: "1px solid var(--glass-border)",
-                    textDecoration: "none",
-                    color: "var(--foreground)",
-                    fontWeight: "500",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                }}>
-                    🎯 Completionist Tracker
+            <GroupedSection title="Explore">
+                <Link href="/completionist" style={{ textDecoration: "none" }}>
+                    <GroupedRow
+                        icon={<span>🎯</span>}
+                        label="Completionist Tracker"
+                        showChevron
+                    />
                 </Link>
-                <Link href="/year-review" style={{
-                    padding: "12px 20px",
-                    background: "var(--glass-bg)",
-                    backdropFilter: "blur(20px)",
-                    WebkitBackdropFilter: "blur(20px)",
-                    borderRadius: "12px",
-                    border: "1px solid var(--glass-border)",
-                    textDecoration: "none",
-                    color: "var(--foreground)",
-                    fontWeight: "500",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                }}>
-                    📅 Year in Review
+                <Link href="/year-review" style={{ textDecoration: "none" }}>
+                    <GroupedRow
+                        icon={<span>📅</span>}
+                        label="Year in Review"
+                        showChevron
+                    />
                 </Link>
-            </div>
+                <Link href="/connections" style={{ textDecoration: "none" }}>
+                    <GroupedRow
+                        icon={<span>🔗</span>}
+                        label="Actor Connections"
+                        showChevron
+                    />
+                </Link>
+            </GroupedSection>
 
             {/* Fix Missing Data */}
             <ReEnrichButton />
@@ -462,48 +502,25 @@ export default async function ProfilePage() {
             </div>
 
             {/* Export Section */}
-            <div style={{ background: "rgba(255,255,255,0.05)", padding: "30px", borderRadius: "20px", marginBottom: "40px" }}>
-                <h2 style={{ fontSize: "1.5rem", marginBottom: "10px" }}>📦 Export Library</h2>
-                <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>
-                    Download your collection data for backup or analysis
-                </p>
-                <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
-                    <a
-                        href="/api/export?format=json"
-                        download
-                        style={{
-                            padding: "12px 24px",
-                            background: "var(--accent)",
-                            color: "white",
-                            borderRadius: "12px",
-                            textDecoration: "none",
-                            fontWeight: "500",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "8px",
-                        }}
-                    >
-                        📄 Export as JSON
-                    </a>
-                    <a
-                        href="/api/export?format=csv"
-                        download
-                        style={{
-                            padding: "12px 24px",
-                            background: "rgba(255,255,255,0.1)",
-                            color: "var(--foreground)",
-                            borderRadius: "12px",
-                            textDecoration: "none",
-                            fontWeight: "500",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "8px",
-                        }}
-                    >
-                        📊 Export as CSV
-                    </a>
-                </div>
-            </div>
+            <GroupedSection
+                title="Export"
+                subtitle="Download your collection data for backup or analysis"
+            >
+                <a href="/api/export?format=json" download style={{ textDecoration: "none" }}>
+                    <GroupedRow
+                        icon={<FileJson size={18} />}
+                        label="Export as JSON"
+                        showChevron
+                    />
+                </a>
+                <a href="/api/export?format=csv" download style={{ textDecoration: "none" }}>
+                    <GroupedRow
+                        icon={<FileSpreadsheet size={18} />}
+                        label="Export as CSV"
+                        showChevron
+                    />
+                </a>
+            </GroupedSection>
         </main>
     );
 }
