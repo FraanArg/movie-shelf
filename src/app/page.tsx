@@ -18,7 +18,8 @@ import MoodFilter from "@/components/MoodFilter";
 import RecommendationRow from "@/components/RecommendationRow";
 import { MOODS } from "@/components/MoodFilter";
 import { fetchMoviesAction } from "@/app/actions";
-import { getDB } from "@/lib/db";
+import { getDB, getDemoData } from "@/lib/db";
+import DemoBanner from "@/components/DemoBanner";
 
 // Genre keywords for filtering
 const genreKeywords: Record<string, string[]> = {
@@ -40,6 +41,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
 
   // 1. Read from Local DB
   let items = await getDB();
+
+  // 2. Check if we should use demo data
+  // Use demo data when: no Trakt connected AND no items in the library
+  const isDemoMode = !isAuthenticated && items.length === 0;
+
+  if (isDemoMode) {
+    items = await getDemoData();
+  }
 
   // Deduplicate
   const uniqueItems = Array.from(new Map(items.map(m => [m.imdbId || m.id, m])).values());
@@ -174,8 +183,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
 
   const hasSagas = Object.keys(sagas).length > 0;
 
+  // Get Trakt auth URL for demo banner
+  const traktAuthUrl = clientId ? getTraktAuthUrl(clientId) : undefined;
+
   return (
     <main style={{ padding: "0 0 80px 0", minHeight: "100vh" }}>
+      {/* Demo banner for unauthenticated users */}
+      {isDemoMode && <DemoBanner traktAuthUrl={traktAuthUrl} />}
+
       <TimeDial />
       <div style={{ padding: "30px 40px 15px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
@@ -231,25 +246,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
         }
         return null;
       })()}
-
-      {!isAuthenticated && clientId && (
-        <div style={{ padding: "0 40px 20px 40px" }}>
-          <Link
-            href={getTraktAuthUrl(clientId)}
-            style={{
-              display: "inline-block",
-              padding: "10px 20px",
-              background: "var(--accent)",
-              color: "white",
-              borderRadius: "20px",
-              fontWeight: "500",
-              fontSize: "0.9rem",
-            }}
-          >
-            Connect Trakt
-          </Link>
-        </div>
-      )}
 
       {isHome ? (
         <>

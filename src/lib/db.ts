@@ -146,3 +146,15 @@ export const addToDB = async (newItems: MovieItem[]): Promise<MovieItem[]> => {
 export const updateDB = async (items: MovieItem[]): Promise<void> => {
     await saveDB(items);
 };
+
+// ============ DEMO DATA ============
+// Used when no user is authenticated to show sample data
+export const getDemoData = async (): Promise<MovieItem[]> => {
+    try {
+        const demoData = await import("@/data/demo-library.json");
+        return demoData.default as MovieItem[];
+    } catch (error) {
+        console.error("Failed to load demo data:", error);
+        return [];
+    }
+};
