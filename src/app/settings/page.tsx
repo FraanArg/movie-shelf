@@ -27,18 +27,36 @@ export default function SettingsPage() {
         const saved = localStorage.getItem("movieshelf-settings");
         if (saved) {
             try {
-                setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(saved) });
+                const parsed = { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+                setSettings(parsed);
+                applyTheme(parsed.theme);
             } catch (e) {
                 console.error("Failed to parse settings", e);
             }
         }
     }, []);
 
-    // Save settings to localStorage
+    // Apply theme to document
+    const applyTheme = (theme: Settings["theme"]) => {
+        if (theme === "system") {
+            // Check system preference
+            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+        } else {
+            document.documentElement.setAttribute("data-theme", theme);
+        }
+    };
+
+    // Save settings to localStorage and apply theme
     const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
         localStorage.setItem("movieshelf-settings", JSON.stringify(newSettings));
+
+        // Apply theme immediately if it changed
+        if (key === "theme") {
+            applyTheme(value as Settings["theme"]);
+        }
     };
 
     const sortOptions = [
