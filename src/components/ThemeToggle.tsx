@@ -1,26 +1,45 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
-    const { theme, setTheme } = useTheme();
+    const [theme, setThemeState] = useState<"light" | "dark">("dark");
     const [mounted, setMounted] = useState(false);
 
-    // Avoid hydration mismatch
+    // Load current theme on mount
     useEffect(() => {
         setMounted(true);
+        const currentTheme = document.documentElement.getAttribute("data-theme") as "light" | "dark" || "dark";
+        setThemeState(currentTheme);
     }, []);
+
+    const toggleTheme = () => {
+        const newTheme = theme === "dark" ? "light" : "dark";
+        setThemeState(newTheme);
+
+        // Apply to document
+        document.documentElement.setAttribute("data-theme", newTheme);
+
+        // Save to settings in localStorage
+        try {
+            const saved = localStorage.getItem("movieshelf-settings");
+            const settings = saved ? JSON.parse(saved) : {};
+            settings.theme = newTheme;
+            localStorage.setItem("movieshelf-settings", JSON.stringify(settings));
+        } catch (e) {
+            console.error("Failed to save theme", e);
+        }
+    };
 
     if (!mounted) return null;
 
     return (
         <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            onClick={toggleTheme}
             style={{
-                background: "var(--glass-highlight)",
-                border: "1px solid var(--glass-border)",
+                background: "var(--fill-tertiary)",
+                border: "1px solid var(--separator)",
                 borderRadius: "50%",
                 width: "40px",
                 height: "40px",
@@ -28,12 +47,12 @@ export default function ThemeToggle() {
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
-                color: "var(--foreground)",
-                backdropFilter: "blur(10px)",
+                color: "var(--label-primary)",
+                transition: "background 0.2s ease, transform 0.2s ease",
             }}
             aria-label="Toggle Theme"
         >
-            {theme === "dark" ? <Moon size={20} /> : <Sun size={20} />}
+            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
         </button>
     );
 }
