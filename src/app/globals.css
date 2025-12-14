@@ -82,28 +82,32 @@
 }
 
 [data-theme='light'] {
+  /* Backgrounds - True Apple Light Mode */
   --bg-primary: #ffffff;
   --bg-secondary: #f2f2f7;
   --bg-tertiary: #ffffff;
   --bg-elevated: #ffffff;
   --bg-grouped: #f2f2f7;
 
-  --separator: rgba(60, 60, 67, 0.36);
+  /* Separators - Subtle but visible */
+  --separator: rgba(60, 60, 67, 0.29);
   --separator-opaque: #c6c6c8;
 
+  /* Labels - High contrast text */
   --label-primary: #000000;
-  --label-secondary: rgba(60, 60, 67, 0.6);
-  --label-tertiary: rgba(60, 60, 67, 0.3);
-  --label-quaternary: rgba(60, 60, 67, 0.18);
+  --label-secondary: #3c3c43;
+  --label-tertiary: #48484a;
+  --label-quaternary: #636366;
 
+  /* Fills - Visible on white backgrounds */
   --fill-primary: rgba(120, 120, 128, 0.2);
   --fill-secondary: rgba(120, 120, 128, 0.16);
   --fill-tertiary: rgba(120, 120, 128, 0.12);
   --fill-quaternary: rgba(120, 120, 128, 0.08);
 
-  /* System Colors - iOS Light */
+  /* System Colors - iOS Light (Accessible) */
   --tint: #007aff;
-  --tint-green: #34c759;
+  --tint-green: #28cd41;
   --tint-red: #ff3b30;
   --tint-orange: #ff9500;
   --tint-yellow: #ffcc00;
@@ -111,15 +115,23 @@
   --tint-pink: #ff2d55;
   --tint-indigo: #5856d6;
 
+  /* Shadows - Essential for light mode depth */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.15);
+
   /* Legacy aliases */
   --background-gradient: #f5f5f7;
   --foreground: #1d1d1f;
   --accent: #007aff;
 
-  --glass-bg: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(0, 0, 0, 0.06);
+  /* Glass effects - Light mode specific */
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(0, 0, 0, 0.08);
   --glass-text: #1d1d1f;
-  --glass-text-inactive: rgba(0, 0, 0, 0.5);
+  --glass-text-inactive: rgba(0, 0, 0, 0.4);
+  --glass-highlight: rgba(255, 255, 255, 0.8);
 }
 
 body {
@@ -693,4 +705,81 @@ a:focus-visible {
 
 .animate-in {
   animation: fadeSlideIn 0.3s ease forwards;
+}
+
+/* ====== LIGHT MODE SPECIFIC STYLES ====== */
+[data-theme='light'] .liquid-glass {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .movie-card {
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .movie-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Header in light mode */
+[data-theme='light'] header {
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Bottom nav in light mode */
+[data-theme='light'] .bottom-nav {
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Filter chips in light mode */
+[data-theme='light'] .quick-filter-chip {
+  background: #f2f2f7;
+  color: #1d1d1f;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .quick-filter-chip:hover {
+  background: #e5e5ea;
+}
+
+/* Cards and panels */
+[data-theme='light'] .stat-card,
+[data-theme='light'] .grouped-section {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Input fields */
+[data-theme='light'] input,
+[data-theme='light'] select,
+[data-theme='light'] textarea {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #000000;
+}
+
+[data-theme='light'] input:focus,
+[data-theme='light'] select:focus,
+[data-theme='light'] textarea:focus {
+  border-color: var(--tint);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+}
+
+/* Segmented control in light mode */
+[data-theme='light'] .segmented-control {
+  background: #f2f2f7;
+}
+
+[data-theme='light'] .segmented-control-indicator {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Shelf view in light mode */
+[data-theme='light'] .shelf-container {
+  background: linear-gradient(180deg, #f8f5f0 0%, #e8e0d6 100%);
 }
